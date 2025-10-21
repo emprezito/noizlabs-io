@@ -1,31 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Play, Trophy, TrendingUp, Users, Zap } from 'lucide-react';
+import { Upload, Play, Trophy, Users, Zap, Swords } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AudioMeme {
   id: string;
   title: string;
   creator: string;
-  votes: number;
-  plays: number;
-  rank: number;
+  wins: number;
+  losses: number;
+  totalBattles: number;
 }
 
-const mockLeaderboard: AudioMeme[] = [
-  { id: '1', title: 'EMOTIONAL DAMAGE', creator: '0x1234...5678', votes: 1250, plays: 15420, rank: 1 },
-  { id: '2', title: 'Its Corn!', creator: '0xabcd...efgh', votes: 980, plays: 12300, rank: 2 },
-  { id: '3', title: 'Bing Chilling', creator: '0x9876...5432', votes: 875, plays: 10500, rank: 3 },
-  { id: '4', title: 'Gangnam Style Drop', creator: '0xdead...beef', votes: 720, plays: 8900, rank: 4 },
-  { id: '5', title: 'Subway Surfers Theme', creator: '0xcafe...babe', votes: 650, plays: 7800, rank: 5 },
+const mockAudioPool: AudioMeme[] = [
+  { id: '1', title: 'EMOTIONAL DAMAGE', creator: '0x1234...5678', wins: 45, losses: 12, totalBattles: 57 },
+  { id: '2', title: 'Its Corn!', creator: '0xabcd...efgh', wins: 38, losses: 19, totalBattles: 57 },
+  { id: '3', title: 'Bing Chilling', creator: '0x9876...5432', wins: 32, losses: 23, totalBattles: 55 },
+  { id: '4', title: 'Gangnam Style Drop', creator: '0xdead...beef', wins: 28, losses: 25, totalBattles: 53 },
+  { id: '5', title: 'Subway Surfers Theme', creator: '0xcafe...babe', wins: 25, losses: 28, totalBattles: 53 },
+  { id: '6', title: 'Bruh Sound Effect #2', creator: '0x1111...2222', wins: 22, losses: 31, totalBattles: 53 },
+  { id: '7', title: 'Vine Boom', creator: '0x3333...4444', wins: 19, losses: 34, totalBattles: 53 },
+  { id: '8', title: 'Taco Bell Bong', creator: '0x5555...6666', wins: 15, losses: 38, totalBattles: 53 },
 ];
 
 const Arena = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentBattle, setCurrentBattle] = useState<[AudioMeme, AudioMeme] | null>(null);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
+  const [votedFor, setVotedFor] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadNextBattle();
+  }, []);
+
+  const loadNextBattle = () => {
+    // Pick two random audio clips for battle
+    const shuffled = [...mockAudioPool].sort(() => Math.random() - 0.5);
+    setCurrentBattle([shuffled[0], shuffled[1]]);
+    setVotedFor(null);
+    setIsPlaying(null);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,7 +57,9 @@ const Arena = () => {
   };
 
   const handleVote = (id: string) => {
-    toast.success('Vote recorded!');
+    setVotedFor(id);
+    toast.success('Vote recorded! Loading next battle...');
+    setTimeout(loadNextBattle, 2000);
   };
 
   return (
@@ -55,16 +74,16 @@ const Arena = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <Card className="glass-strong border-border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-lg bg-primary/20">
-                  <Trophy className="w-6 h-6 text-primary" />
+                  <Swords className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">$5,420</div>
-                  <div className="text-sm text-muted-foreground">Prize Pool</div>
+                  <div className="text-2xl font-bold">1,337</div>
+                  <div className="text-sm text-muted-foreground">Active Battles</div>
                 </div>
               </div>
             </CardContent>
@@ -77,20 +96,6 @@ const Arena = () => {
                   <Users className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">1,337</div>
-                  <div className="text-sm text-muted-foreground">Participants</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-strong border-border">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-accent/20">
-                  <TrendingUp className="w-6 h-6 text-accent" />
-                </div>
-                <div>
                   <div className="text-2xl font-bold">89.2K</div>
                   <div className="text-sm text-muted-foreground">Total Votes</div>
                 </div>
@@ -101,12 +106,12 @@ const Arena = () => {
           <Card className="glass-strong border-border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-primary/20">
-                  <Zap className="w-6 h-6 text-primary" />
+                <div className="p-3 rounded-lg bg-accent/20">
+                  <Trophy className="w-6 h-6 text-accent" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">5d 12h</div>
-                  <div className="text-sm text-muted-foreground">Time Left</div>
+                  <div className="text-2xl font-bold">$5,420</div>
+                  <div className="text-sm text-muted-foreground">Prize Pool</div>
                 </div>
               </div>
             </CardContent>
@@ -157,104 +162,113 @@ const Arena = () => {
                 )}
 
                 <div className="glass rounded-lg p-4 mt-6">
-                  <h4 className="font-semibold mb-3">Voting Breakdown</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Community</span>
-                      <span className="text-primary font-semibold">60%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Engagement</span>
-                      <span className="text-secondary font-semibold">25%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Curators</span>
-                      <span className="text-accent font-semibold">15%</span>
-                    </div>
+                  <h4 className="font-semibold mb-3">How It Works</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• Upload your audio meme</p>
+                    <p>• Face random opponents in 1v1 battles</p>
+                    <p>• Community votes for the winner</p>
+                    <p>• Win battles to climb the ranks</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Leaderboard */}
+          {/* Battle Arena */}
           <div className="lg:col-span-2">
             <Card className="glass-strong border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-primary" />
-                  Weekly Leaderboard
+                  <Swords className="w-5 h-5 text-primary" />
+                  Audio Battle Arena
                 </CardTitle>
-                <CardDescription>Top audio memes competing for rewards</CardDescription>
+                <CardDescription>Vote for your favorite audio meme</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {mockLeaderboard.map((meme) => (
-                    <div
-                      key={meme.id}
-                      className="glass rounded-lg p-4 hover:glass-strong transition-all group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ${
-                            meme.rank === 1 ? 'bg-primary/20 text-primary' :
-                            meme.rank === 2 ? 'bg-secondary/20 text-secondary' :
-                            meme.rank === 3 ? 'bg-accent/20 text-accent' :
-                            'bg-muted/20 text-muted-foreground'
-                          }`}>
-                            #{meme.rank}
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold truncate">{meme.title}</h4>
-                            {meme.rank <= 3 && (
-                              <Badge variant="outline" className="border-primary text-primary">
-                                Top 3
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">{meme.creator}</p>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-primary">{meme.votes}</div>
-                          <div className="text-xs text-muted-foreground">votes</div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => setIsPlaying(isPlaying === meme.id ? null : meme.id)}
-                          >
-                            <Play className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="glow"
-                            onClick={() => handleVote(meme.id)}
-                          >
-                            Vote
-                          </Button>
-                        </div>
-                      </div>
-
-                      {isPlaying === meme.id && (
-                        <div className="mt-4 pt-4 border-t border-border">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full w-1/3 bg-gradient-to-r from-primary to-accent animate-pulse" />
-                            </div>
-                            <span className="text-xs text-muted-foreground">0:08 / 0:24</span>
-                          </div>
-                        </div>
-                      )}
+                {currentBattle ? (
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <Badge variant="outline" className="border-primary text-primary mb-4">
+                        Round {Math.floor(Math.random() * 100) + 1}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {currentBattle.map((meme, index) => (
+                        <Card 
+                          key={meme.id}
+                          className={`glass border-border transition-all ${
+                            votedFor === meme.id ? 'ring-2 ring-primary glow-primary' : ''
+                          } ${votedFor && votedFor !== meme.id ? 'opacity-50' : ''}`}
+                        >
+                          <CardContent className="pt-6 space-y-4">
+                            <div className="text-center">
+                              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                                <Play className="w-8 h-8 text-white" />
+                              </div>
+                              <h3 className="text-xl font-bold mb-2">{meme.title}</h3>
+                              <p className="text-sm text-muted-foreground mb-4">{meme.creator}</p>
+                            </div>
+
+                            <div className="glass rounded-lg p-3 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Wins</span>
+                                <span className="text-primary font-bold">{meme.wins}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Losses</span>
+                                <span className="text-destructive font-bold">{meme.losses}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Win Rate</span>
+                                <span className="font-bold">
+                                  {((meme.wins / meme.totalBattles) * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <Button
+                              variant={isPlaying === meme.id ? "outline" : "ghost"}
+                              className="w-full"
+                              onClick={() => setIsPlaying(isPlaying === meme.id ? null : meme.id)}
+                            >
+                              <Play className="w-4 h-4 mr-2" />
+                              {isPlaying === meme.id ? 'Playing...' : 'Preview'}
+                            </Button>
+
+                            {isPlaying === meme.id && (
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                  <div className="h-full w-1/3 bg-gradient-to-r from-primary to-accent animate-pulse" />
+                                </div>
+                                <span className="text-xs text-muted-foreground">0:08 / 0:24</span>
+                              </div>
+                            )}
+
+                            <Button
+                              variant="glow"
+                              className="w-full"
+                              disabled={votedFor !== null}
+                              onClick={() => handleVote(meme.id)}
+                            >
+                              {votedFor === meme.id ? '✓ Voted!' : 'Vote'}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {votedFor && (
+                      <div className="text-center text-sm text-muted-foreground animate-pulse">
+                        Loading next battle...
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">Loading battle...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
