@@ -47,9 +47,10 @@ const Arena = () => {
     entriesCount: audioClips.filter(clip => clip.category === cat.name).length,
   }));
 
+  // Generate battles only when the number of clips changes, not when stats update
   useEffect(() => {
     generateBattles();
-  }, [audioClips]);
+  }, [audioClips.length, selectedCategory]);
 
   const generateBattles = () => {
     const newBattles: Battle[] = [];
