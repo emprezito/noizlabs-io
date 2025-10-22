@@ -3,36 +3,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap } from 'lucide-react';
+import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
-
-interface AudioMeme {
-  id: string;
-  title: string;
-  creator: string;
-  wins: number;
-  losses: number;
-  totalBattles: number;
-  category: string;
-}
-
-interface CategoryWithCount {
-  id: string;
-  name: string;
-  entriesCount: number;
-}
+import { useSolanaWallet } from '@/hooks/useSolanaWallet';
+import { supabase } from '@/integrations/supabase/client';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 interface Battle {
   id: string;
   category: string;
-  contestants: [AudioMeme, AudioMeme];
+  categoryId: string;
+  contestants: [any, any];
 }
 
 const Arena = () => {
   const navigate = useNavigate();
-  const { audioClips, categories, userPoints, addAudioClip, addPoints, updateClipStats } = useArena();
+  const { audioClips, categories, refreshData } = useArena();
+  const { walletAddress, isConnected } = useSolanaWallet();
+  const { setVisible } = useWalletModal();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [audioTitle, setAudioTitle] = useState('');
   const [selectedUploadCategory, setSelectedUploadCategory] = useState('');
@@ -41,13 +31,7 @@ const Arena = () => {
   const [votedBattles, setVotedBattles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Calculate category counts dynamically
-  const categoriesWithCount: CategoryWithCount[] = categories.map(cat => ({
-    ...cat,
-    entriesCount: audioClips.filter(clip => clip.category === cat.name).length,
-  }));
-
-  // Generate battles only when the number of clips changes, not when stats update
+  // Generate battles only when clips change
   useEffect(() => {
     generateBattles();
   }, [audioClips.length, selectedCategory]);
@@ -58,19 +42,35 @@ const Arena = () => {
     categories.forEach(category => {
       const categoryClips = audioClips.filter(clip => clip.category === category.name);
       if (categoryClips.length >= 2) {
-        const shuffled = [...categoryClips].sort(() => Math.random() - 0.5);
-        newBattles.push({
-          id: `${category.name}-${Date.now()}-${Math.random()}`,
-          category: category.name,
-          contestants: [shuffled[0], shuffled[1]]
-        });
+        // Create battles for all pairs
+        for (let i = 0; i < categoryClips.length; i += 2) {
+          if (i + 1 < categoryClips.length) {
+            newBattles.push({
+              id: `${category.name}-${i}`,
+              category: category.name,
+              categoryId: category.id,
+              contestants: [categoryClips[i], categoryClips[i + 1]]
+            });
+          }
+        }
       }
     });
     
-    setBattles(newBattles.sort(() => Math.random() - 0.5));
+    setBattles(newBattles);
+  };
+
+  const requireWallet = () => {
+    if (!isConnected || !walletAddress) {
+      toast.error('Please connect your wallet first');
+      setVisible(true);
+      return false;
+    }
+    return true;
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!requireWallet()) return;
+    
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
@@ -78,7 +78,8 @@ const Arena = () => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
+    if (!requireWallet()) return;
     if (!selectedFile) {
       toast.error('Please select an audio file');
       return;
@@ -92,9 +93,8 @@ const Arena = () => {
       return;
     }
 
-    // Check if category has reached max entries
     const categoryClipsCount = audioClips.filter(
-      clip => clip.category === selectedUploadCategory
+      clip => clip.categoryId === selectedUploadCategory
     ).length;
     
     if (categoryClipsCount >= 10) {
@@ -102,42 +102,82 @@ const Arena = () => {
       return;
     }
 
-    // Add the audio clip
-    addAudioClip({
-      title: audioTitle,
-      creator: '0x1234...5678', // Mock wallet address
-      category: selectedUploadCategory,
-    });
+    try {
+      // Insert audio clip
+      const { error } = await supabase
+        .from('audio_clips')
+        .insert({
+          title: audioTitle,
+          creator_wallet: walletAddress!,
+          category_id: selectedUploadCategory,
+        });
 
-    // Award points
-    addPoints(10);
+      if (error) throw error;
 
-    toast.success('Audio uploaded! You earned 10 points! 🎉');
-    setSelectedFile(null);
-    setAudioTitle('');
-    setSelectedUploadCategory('');
+      // Award points
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 10 });
+
+      toast.success('Audio uploaded! You earned 10 points! 🎉');
+      setSelectedFile(null);
+      setAudioTitle('');
+      setSelectedUploadCategory('');
+      refreshData();
+    } catch (error: any) {
+      console.error('Error uploading:', error);
+      toast.error('Failed to upload audio clip');
+    }
   };
 
-  const handleVote = (battleId: string, clipId: string, opponentId: string) => {
-    // Mark this battle as voted
-    setVotedBattles(prev => new Set(prev).add(battleId));
-    
-    // Update clip stats - winner gets +1 win, loser gets +1 loss
-    updateClipStats(clipId, true);
-    updateClipStats(opponentId, false);
-    
-    // Award 5 points for voting
-    addPoints(5);
-    
-    toast.success('Vote recorded! You earned 5 points!');
+  const handleVote = async (battleId: string, clipId: string) => {
+    if (!requireWallet()) return;
+
+    try {
+      // Insert vote
+      const { error } = await supabase
+        .from('votes')
+        .insert({
+          voter_wallet: walletAddress!,
+          clip_id: clipId,
+          battle_id: battleId,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('You already voted in this battle');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      // Award points
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
+
+      setVotedBattles(prev => new Set(prev).add(battleId));
+      toast.success('Vote recorded! You earned 5 points!');
+      refreshData();
+    } catch (error: any) {
+      console.error('Error voting:', error);
+      toast.error('Failed to record vote');
+    }
+  };
+
+  const handleShare = (clipId: string, clipTitle: string) => {
+    const shareUrl = `${window.location.origin}/arena?clip=${clipId}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success(`Link copied for ${clipTitle}!`);
   };
 
   const filteredBattles = selectedCategory === 'all' 
     ? battles 
     : battles.filter(b => b.category === selectedCategory);
 
-  // Calculate total votes from all clips
-  const totalVotes = audioClips.reduce((sum, clip) => sum + clip.totalBattles, 0);
+  const totalVotes = audioClips.reduce((sum, clip) => sum + clip.votes, 0);
+
+  const categoriesWithCount = categories.map(cat => ({
+    ...cat,
+    entriesCount: audioClips.filter(clip => clip.categoryId === cat.id).length,
+  }));
 
   return (
     <div className="min-h-screen pt-24 pb-12">
@@ -187,8 +227,8 @@ const Arena = () => {
                   <Sparkles className="w-6 h-6 text-accent" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{userPoints}</div>
-                  <div className="text-sm text-muted-foreground">Your Points</div>
+                  <div className="text-2xl font-bold">{audioClips.length}</div>
+                  <div className="text-sm text-muted-foreground">Audio Clips</div>
                 </div>
               </div>
             </CardContent>
@@ -199,7 +239,9 @@ const Arena = () => {
               <Button 
                 variant="glow" 
                 className="w-full h-full"
-                onClick={() => navigate('/create-category')}
+                onClick={() => {
+                  if (requireWallet()) navigate('/create-category');
+                }}
               >
                 <FolderPlus className="w-4 h-4 mr-2" />
                 Create Category
@@ -271,7 +313,7 @@ const Arena = () => {
                     >
                       <option value="">Select Category</option>
                       {categoriesWithCount.map(cat => (
-                        <option key={cat.id} value={cat.name}>
+                        <option key={cat.id} value={cat.id}>
                           {cat.name} ({cat.entriesCount}/10)
                         </option>
                       ))}
@@ -290,11 +332,13 @@ const Arena = () => {
                 <div className="glass rounded-lg p-4 mt-6">
                   <h4 className="font-semibold mb-3">How It Works</h4>
                   <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• Connect your Solana wallet</p>
                     <p>• Upload audio clips for free</p>
                     <p>• Earn 10 points per upload</p>
                     <p>• Max 10 entries per category</p>
-                    <p>• Community votes in 1v1 battles</p>
-                    <p>• Create categories for 50 points</p>
+                    <p>• Vote to earn 5 points</p>
+                    <p>• Share clips to get votes</p>
+                    <p>• Top clip wins 25 points after 24h</p>
                   </div>
                 </div>
               </CardContent>
@@ -330,7 +374,8 @@ const Arena = () => {
                                     <Play className="w-6 h-6 text-white" />
                                   </div>
                                   <h3 className="text-lg font-bold mb-1">{meme.title}</h3>
-                                  <p className="text-xs text-muted-foreground mb-3">{meme.creator}</p>
+                                  <p className="text-xs text-muted-foreground mb-1">{meme.creator}</p>
+                                  <p className="text-sm text-primary font-semibold">{meme.votes} votes</p>
                                 </div>
 
                                 <Button
@@ -352,18 +397,24 @@ const Arena = () => {
                                   </div>
                                 )}
 
-                                <Button
-                                  variant={hasVoted ? "outline" : "glow"}
-                                  size="sm"
-                                  className="w-full"
-                                  disabled={hasVoted}
-                                  onClick={() => {
-                                    const opponent = battle.contestants.find(c => c.id !== meme.id);
-                                    if (opponent) handleVote(battle.id, meme.id, opponent.id);
-                                  }}
-                                >
-                                  {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant={hasVoted ? "outline" : "glow"}
+                                    size="sm"
+                                    className="flex-1"
+                                    disabled={hasVoted}
+                                    onClick={() => handleVote(battle.id, meme.id)}
+                                  >
+                                    {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleShare(meme.id, meme.title)}
+                                  >
+                                    <Share2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </CardContent>
                             </Card>
                           ))}
@@ -375,7 +426,11 @@ const Arena = () => {
               ) : (
                 <Card className="glass-strong border-border">
                   <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">No battles in this category yet</p>
+                    <p className="text-muted-foreground">
+                      {selectedCategory === 'all' 
+                        ? 'No battles yet. Upload some audio clips to get started!' 
+                        : 'No battles in this category yet. Need at least 2 clips.'}
+                    </p>
                   </CardContent>
                 </Card>
               )}
