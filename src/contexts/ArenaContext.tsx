@@ -1,137 +1,151 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
+// Types
 interface AudioMeme {
   id: string;
   title: string;
   creator: string;
-  wins: number;
-  losses: number;
-  totalBattles: number;
   category: string;
+  categoryId: string;
+  votes: number;
 }
 
 interface Category {
   id: string;
   name: string;
+  creatorWallet: string;
+  expiresAt: string;
 }
 
 interface ArenaContextType {
   audioClips: AudioMeme[];
   categories: Category[];
   userPoints: number;
-  addAudioClip: (clip: Omit<AudioMeme, 'id' | 'wins' | 'losses' | 'totalBattles'>) => void;
-  addCategory: (name: string) => void;
-  addPoints: (points: number) => void;
-  updateClipStats: (clipId: string, won: boolean) => void;
+  refreshData: () => Promise<void>;
+  fetchUserPoints: (walletAddress: string) => Promise<void>;
 }
 
 const ArenaContext = createContext<ArenaContextType | undefined>(undefined);
 
-const initialCategories: Category[] = [
-  { id: '1', name: 'Movie Quotes' },
-  { id: '2', name: 'Audio Memes' },
-  { id: '3', name: 'Voiceovers' },
-  { id: '4', name: 'Sound Effects' },
-];
+export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [audioClips, setAudioClips] = useState<AudioMeme[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [userPoints, setUserPoints] = useState<number>(0);
 
-const initialAudioPool: AudioMeme[] = [
-  { id: '1', title: 'EMOTIONAL DAMAGE', creator: '0x1234...5678', wins: 45, losses: 12, totalBattles: 57, category: 'Audio Memes' },
-  { id: '2', title: 'Its Corn!', creator: '0xabcd...efgh', wins: 38, losses: 19, totalBattles: 57, category: 'Audio Memes' },
-  { id: '3', title: 'I am your father', creator: '0x9876...5432', wins: 32, losses: 23, totalBattles: 55, category: 'Movie Quotes' },
-  { id: '4', title: 'You shall not pass', creator: '0xdead...beef', wins: 28, losses: 25, totalBattles: 53, category: 'Movie Quotes' },
-  { id: '5', title: 'Epic Trailer Voice', creator: '0xcafe...babe', wins: 25, losses: 28, totalBattles: 53, category: 'Voiceovers' },
-  { id: '6', title: 'Bruh Sound Effect #2', creator: '0x1111...2222', wins: 22, losses: 31, totalBattles: 53, category: 'Sound Effects' },
-  { id: '7', title: 'Vine Boom', creator: '0x3333...4444', wins: 19, losses: 34, totalBattles: 53, category: 'Sound Effects' },
-  { id: '8', title: 'Why so serious?', creator: '0x5555...6666', wins: 15, losses: 38, totalBattles: 53, category: 'Movie Quotes' },
-];
+  // Fetch data from database
+  const refreshData = async () => {
+    try {
+      // Fetch categories (only non-expired)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
 
-export const ArenaProvider = ({ children }: { children: ReactNode }) => {
-  const [audioClips, setAudioClips] = useState<AudioMeme[]>(() => {
-    const saved = localStorage.getItem('arena_audio_clips');
-    return saved ? JSON.parse(saved) : initialAudioPool;
-  });
+      if (categoriesError) throw categoriesError;
 
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('arena_categories');
-    return saved ? JSON.parse(saved) : initialCategories;
-  });
+      const formattedCategories: Category[] = (categoriesData || []).map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        creatorWallet: cat.creator_wallet,
+        expiresAt: cat.expires_at,
+      }));
 
-  const [userPoints, setUserPoints] = useState<number>(() => {
-    const saved = localStorage.getItem('arena_user_points');
-    return saved ? parseInt(saved) : 0;
-  });
+      setCategories(formattedCategories);
 
+      // Fetch audio clips with vote counts
+      const { data: clipsData, error: clipsError } = await supabase
+        .from('audio_clips')
+        .select('*, categories!inner(name, expires_at)')
+        .gt('categories.expires_at', new Date().toISOString());
+
+      if (clipsError) throw clipsError;
+
+      // Get vote counts for all clips
+      const clipsWithVotes = await Promise.all(
+        (clipsData || []).map(async (clip: any) => {
+          const { data: votesData } = await supabase.rpc('get_clip_votes', { clip_uuid: clip.id });
+          return {
+            id: clip.id,
+            title: clip.title,
+            creator: clip.creator_wallet,
+            category: clip.categories.name,
+            categoryId: clip.category_id,
+            votes: votesData || 0,
+          };
+        })
+      );
+
+      setAudioClips(clipsWithVotes);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  // Fetch user points based on wallet
+  const fetchUserPoints = async (walletAddress: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_points')
+        .select('points')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+
+      if (error) throw error;
+      setUserPoints(data?.points || 0);
+    } catch (error) {
+      console.error('Error fetching user points:', error);
+    }
+  };
+
+  // Subscribe to realtime updates
   useEffect(() => {
-    localStorage.setItem('arena_audio_clips', JSON.stringify(audioClips));
-  }, [audioClips]);
+    refreshData();
 
-  useEffect(() => {
-    localStorage.setItem('arena_categories', JSON.stringify(categories));
-  }, [categories]);
+    const categoriesChannel = supabase
+      .channel('categories-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        refreshData();
+      })
+      .subscribe();
 
-  useEffect(() => {
-    localStorage.setItem('arena_user_points', userPoints.toString());
-  }, [userPoints]);
+    const clipsChannel = supabase
+      .channel('clips-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'audio_clips' }, () => {
+        refreshData();
+      })
+      .subscribe();
 
-  const addAudioClip = (clip: Omit<AudioMeme, 'id' | 'wins' | 'losses' | 'totalBattles'>) => {
-    const newClip: AudioMeme = {
-      ...clip,
-      id: Date.now().toString(),
-      wins: 0,
-      losses: 0,
-      totalBattles: 0,
+    const votesChannel = supabase
+      .channel('votes-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => {
+        refreshData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(categoriesChannel);
+      supabase.removeChannel(clipsChannel);
+      supabase.removeChannel(votesChannel);
     };
-    setAudioClips(prev => [...prev, newClip]);
+  }, []);
+
+  const value = {
+    audioClips,
+    categories,
+    userPoints,
+    refreshData,
+    fetchUserPoints,
   };
 
-  const addCategory = (name: string) => {
-    const newCategory: Category = {
-      id: Date.now().toString(),
-      name,
-    };
-    setCategories(prev => [...prev, newCategory]);
-  };
-
-  const addPoints = (points: number) => {
-    setUserPoints(prev => prev + points);
-  };
-
-  const updateClipStats = (clipId: string, won: boolean) => {
-    setAudioClips(prev =>
-      prev.map(clip =>
-        clip.id === clipId
-          ? {
-              ...clip,
-              wins: won ? clip.wins + 1 : clip.wins,
-              losses: won ? clip.losses : clip.losses + 1,
-              totalBattles: clip.totalBattles + 1,
-            }
-          : clip
-      )
-    );
-  };
-
-  return (
-    <ArenaContext.Provider
-      value={{
-        audioClips,
-        categories,
-        userPoints,
-        addAudioClip,
-        addCategory,
-        addPoints,
-        updateClipStats,
-      }}
-    >
-      {children}
-    </ArenaContext.Provider>
-  );
+  return <ArenaContext.Provider value={value}>{children}</ArenaContext.Provider>;
 };
 
 export const useArena = () => {
   const context = useContext(ArenaContext);
-  if (!context) {
-    throw new Error('useArena must be used within ArenaProvider');
+  if (context === undefined) {
+    throw new Error('useArena must be used within an ArenaProvider');
   }
   return context;
 };

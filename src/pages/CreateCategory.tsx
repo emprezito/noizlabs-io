@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,14 +9,25 @@ import { ArrowLeft, Sparkles, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
+import { useSolanaWallet } from '@/hooks/useSolanaWallet';
+import { supabase } from '@/integrations/supabase/client';
 
 const CreateCategory = () => {
   const navigate = useNavigate();
-  const { categories, addCategory, addPoints } = useArena();
+  const { categories, refreshData, fetchUserPoints } = useArena();
+  const { walletAddress, isConnected } = useSolanaWallet();
+  const { setVisible } = useWalletModal();
   const [categoryName, setCategoryName] = useState('');
   const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateCategory = () => {
+  const handleCreateCategory = async () => {
+    if (!isConnected || !walletAddress) {
+      toast.error('Please connect your wallet first');
+      setVisible(true);
+      return;
+    }
+
     if (!categoryName.trim()) {
       toast.error('Please enter a category name');
       return;
@@ -26,12 +38,47 @@ const CreateCategory = () => {
       toast.error('Category already exists');
       return;
     }
+
+    setIsSubmitting(true);
     
-    addCategory(categoryName);
-    addPoints(50);
-    
-    toast.success('Category created! You earned 50 points! 🎉');
-    setTimeout(() => navigate('/arena'), 1500);
+    try {
+      // Check if user has enough points
+      const { data: pointsData } = await supabase
+        .from('user_points')
+        .select('points')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+
+      const currentPoints = pointsData?.points || 0;
+      if (currentPoints < 50) {
+        toast.error('Not enough points! You need 50 points to create a category.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create category
+      const { error } = await supabase
+        .from('categories')
+        .insert({
+          name: categoryName,
+          creator_wallet: walletAddress,
+        });
+
+      if (error) throw error;
+
+      // Deduct 50 points
+      await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: -50 });
+
+      toast.success('Category created successfully! 🎉');
+      await refreshData();
+      await fetchUserPoints(walletAddress);
+      navigate('/arena');
+    } catch (error: any) {
+      console.error('Error creating category:', error);
+      toast.error('Failed to create category');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -54,12 +101,12 @@ const CreateCategory = () => {
               </div>
               <div>
                 <CardTitle>Create New Category</CardTitle>
-                <CardDescription>Define a new audio clip category</CardDescription>
+                <CardDescription>Define a new audio clip category (24hr duration)</CardDescription>
               </div>
             </div>
             <Badge variant="outline" className="border-primary text-primary w-fit">
               <Sparkles className="w-3 h-3 mr-1" />
-              Earn 50 Points
+              Costs 50 Points
             </Badge>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -85,10 +132,11 @@ const CreateCategory = () => {
             <div className="glass rounded-lg p-4">
               <h4 className="font-semibold mb-3">Category Rules</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
+                <p>• Category lasts for 24 hours</p>
                 <p>• Maximum 10 audio entries per category</p>
                 <p>• All clips compete in 1v1 battles</p>
                 <p>• Community votes determine winners</p>
-                <p>• You'll earn 50 points for creating this category</p>
+                <p>• Top voted clip wins 25 points after expiry</p>
               </div>
             </div>
 
@@ -96,9 +144,10 @@ const CreateCategory = () => {
               variant="glow" 
               className="w-full" 
               onClick={handleCreateCategory}
+              disabled={isSubmitting}
             >
               <FolderPlus className="w-4 h-4 mr-2" />
-              Create Category
+              {isSubmitting ? 'Creating...' : 'Create Category'}
             </Button>
           </CardContent>
         </Card>

@@ -1,11 +1,30 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, Radio, Sparkles } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
+import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 
 export const Navbar = () => {
-  const { userPoints } = useArena();
+  const { userPoints, fetchUserPoints } = useArena();
+  const { walletAddress, isConnected, disconnect } = useSolanaWallet();
+  const { setVisible } = useWalletModal();
+
+  useEffect(() => {
+    if (walletAddress) {
+      fetchUserPoints(walletAddress);
+    }
+  }, [walletAddress]);
+
+  const handleWalletClick = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      setVisible(true);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border">
@@ -34,13 +53,17 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="border-primary text-primary px-3 py-1.5">
-              <Sparkles className="w-3 h-3 mr-1" />
-              {userPoints} Points
-            </Badge>
-            <Button variant="neon" size="sm">
+            {isConnected && (
+              <Badge variant="outline" className="border-primary text-primary px-3 py-1.5">
+                <Sparkles className="w-3 h-3 mr-1" />
+                {userPoints} Points
+              </Badge>
+            )}
+            <Button variant="neon" size="sm" onClick={handleWalletClick}>
               <Wallet className="w-4 h-4 mr-2" />
-              Connect Wallet
+              {isConnected 
+                ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
+                : 'Connect Wallet'}
             </Button>
           </div>
         </div>
