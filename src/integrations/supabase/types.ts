@@ -14,13 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audio_clips: {
+        Row: {
+          category_id: string
+          created_at: string
+          creator_wallet: string
+          id: string
+          title: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          creator_wallet: string
+          id?: string
+          title: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          creator_wallet?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_clips_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          creator_wallet: string
+          expires_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          creator_wallet: string
+          expires_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          creator_wallet?: string
+          expires_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          created_at: string
+          points: number
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          points?: number
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          points?: number
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          battle_id: string
+          clip_id: string
+          created_at: string
+          id: string
+          voter_wallet: string
+        }
+        Insert: {
+          battle_id: string
+          clip_id: string
+          created_at?: string
+          id?: string
+          voter_wallet: string
+        }
+        Update: {
+          battle_id?: string
+          clip_id?: string
+          created_at?: string
+          id?: string
+          voter_wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_clip_id_fkey"
+            columns: ["clip_id"]
+            isOneToOne: false
+            referencedRelation: "audio_clips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_user_points: {
+        Args: { points_to_add: number; wallet: string }
+        Returns: undefined
+      }
+      get_clip_votes: { Args: { clip_uuid: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
