@@ -42,20 +42,6 @@ const CreateCategory = () => {
     setIsSubmitting(true);
     
     try {
-      // Check if user has enough points
-      const { data: pointsData } = await supabase
-        .from('user_points')
-        .select('points')
-        .eq('wallet_address', walletAddress)
-        .maybeSingle();
-
-      const currentPoints = pointsData?.points || 0;
-      if (currentPoints < 50) {
-        toast.error('Not enough points! You need 50 points to create a category.');
-        setIsSubmitting(false);
-        return;
-      }
-
       // Create category
       const { error } = await supabase
         .from('categories')
@@ -66,8 +52,8 @@ const CreateCategory = () => {
 
       if (error) throw error;
 
-      // Deduct 50 points
-      await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: -50 });
+      // Award 50 points
+      await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });
 
       toast.success('Category created successfully! 🎉');
       await refreshData();
@@ -106,7 +92,7 @@ const CreateCategory = () => {
             </div>
             <Badge variant="outline" className="border-primary text-primary w-fit">
               <Sparkles className="w-3 h-3 mr-1" />
-              Costs 50 Points
+              Earns 50 Points
             </Badge>
           </CardHeader>
           <CardContent className="space-y-6">
