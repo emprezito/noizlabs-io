@@ -118,21 +118,25 @@ const Arena = () => {
   };
 
   const handleVote = (battleId: string, clipId: string, opponentId: string) => {
+    // Mark this battle as voted
     setVotedBattles(prev => new Set(prev).add(battleId));
     
-    // Update clip stats
-    updateClipStats(clipId, true); // Winner
-    updateClipStats(opponentId, false); // Loser
+    // Update clip stats - winner gets +1 win, loser gets +1 loss
+    updateClipStats(clipId, true);
+    updateClipStats(opponentId, false);
     
     // Award 5 points for voting
     addPoints(5);
     
-    toast.success('Vote recorded! You earned 5 points! 🎉');
+    toast.success('Vote recorded! You earned 5 points!');
   };
 
   const filteredBattles = selectedCategory === 'all' 
     ? battles 
     : battles.filter(b => b.category === selectedCategory);
+
+  // Calculate total votes from all clips
+  const totalVotes = audioClips.reduce((sum, clip) => sum + clip.totalBattles, 0);
 
   return (
     <div className="min-h-screen pt-24 pb-12">
@@ -154,7 +158,7 @@ const Arena = () => {
                   <Trophy className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">89.2K</div>
+                  <div className="text-2xl font-bold">{totalVotes}</div>
                   <div className="text-sm text-muted-foreground">Total Votes</div>
                 </div>
               </div>
@@ -326,23 +330,6 @@ const Arena = () => {
                                   </div>
                                   <h3 className="text-lg font-bold mb-1">{meme.title}</h3>
                                   <p className="text-xs text-muted-foreground mb-3">{meme.creator}</p>
-                                </div>
-
-                                <div className="glass rounded-lg p-3 grid grid-cols-3 gap-2 text-center">
-                                  <div>
-                                    <div className="text-primary font-bold">{meme.wins}</div>
-                                    <div className="text-xs text-muted-foreground">Wins</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-destructive font-bold">{meme.losses}</div>
-                                    <div className="text-xs text-muted-foreground">Losses</div>
-                                  </div>
-                                  <div>
-                                    <div className="font-bold">
-                                      {((meme.wins / meme.totalBattles) * 100).toFixed(0)}%
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">Win Rate</div>
-                                  </div>
                                 </div>
 
                                 <Button
