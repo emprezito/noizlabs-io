@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useArena } from '@/contexts/ArenaContext';
 
 interface AudioMeme {
   id: string;
@@ -17,7 +18,7 @@ interface AudioMeme {
   category: string;
 }
 
-interface Category {
+interface CategoryWithCount {
   id: string;
   name: string;
   entriesCount: number;
@@ -29,48 +30,37 @@ interface Battle {
   contestants: [AudioMeme, AudioMeme];
 }
 
-const mockCategories: Category[] = [
-  { id: '1', name: 'Movie Quotes', entriesCount: 8 },
-  { id: '2', name: 'Audio Memes', entriesCount: 10 },
-  { id: '3', name: 'Voiceovers', entriesCount: 6 },
-  { id: '4', name: 'Sound Effects', entriesCount: 7 },
-];
-
-const mockAudioPool: AudioMeme[] = [
-  { id: '1', title: 'EMOTIONAL DAMAGE', creator: '0x1234...5678', wins: 45, losses: 12, totalBattles: 57, category: 'Audio Memes' },
-  { id: '2', title: 'Its Corn!', creator: '0xabcd...efgh', wins: 38, losses: 19, totalBattles: 57, category: 'Audio Memes' },
-  { id: '3', title: 'I am your father', creator: '0x9876...5432', wins: 32, losses: 23, totalBattles: 55, category: 'Movie Quotes' },
-  { id: '4', title: 'You shall not pass', creator: '0xdead...beef', wins: 28, losses: 25, totalBattles: 53, category: 'Movie Quotes' },
-  { id: '5', title: 'Epic Trailer Voice', creator: '0xcafe...babe', wins: 25, losses: 28, totalBattles: 53, category: 'Voiceovers' },
-  { id: '6', title: 'Bruh Sound Effect #2', creator: '0x1111...2222', wins: 22, losses: 31, totalBattles: 53, category: 'Sound Effects' },
-  { id: '7', title: 'Vine Boom', creator: '0x3333...4444', wins: 19, losses: 34, totalBattles: 53, category: 'Sound Effects' },
-  { id: '8', title: 'Why so serious?', creator: '0x5555...6666', wins: 15, losses: 38, totalBattles: 53, category: 'Movie Quotes' },
-];
-
 const Arena = () => {
   const navigate = useNavigate();
+  const { audioClips, categories, userPoints, addAudioClip, addPoints, updateClipStats } = useArena();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [audioTitle, setAudioTitle] = useState('');
+  const [selectedUploadCategory, setSelectedUploadCategory] = useState('');
   const [battles, setBattles] = useState<Battle[]>([]);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [votedBattles, setVotedBattles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  // Calculate category counts dynamically
+  const categoriesWithCount: CategoryWithCount[] = categories.map(cat => ({
+    ...cat,
+    entriesCount: audioClips.filter(clip => clip.category === cat.name).length,
+  }));
+
   useEffect(() => {
     generateBattles();
-  }, []);
+  }, [audioClips]);
 
   const generateBattles = () => {
-    // Create multiple battles from random pairs
     const newBattles: Battle[] = [];
-    const categories = ['Audio Memes', 'Movie Quotes', 'Voiceovers', 'Sound Effects'];
     
     categories.forEach(category => {
-      const categoryClips = mockAudioPool.filter(clip => clip.category === category);
+      const categoryClips = audioClips.filter(clip => clip.category === category.name);
       if (categoryClips.length >= 2) {
         const shuffled = [...categoryClips].sort(() => Math.random() - 0.5);
         newBattles.push({
-          id: `${category}-${Date.now()}-${Math.random()}`,
-          category,
+          id: `${category.name}-${Date.now()}-${Math.random()}`,
+          category: category.name,
           contestants: [shuffled[0], shuffled[1]]
         });
       }
@@ -92,13 +82,52 @@ const Arena = () => {
       toast.error('Please select an audio file');
       return;
     }
+    if (!audioTitle) {
+      toast.error('Please enter a title');
+      return;
+    }
+    if (!selectedUploadCategory) {
+      toast.error('Please select a category');
+      return;
+    }
+
+    // Check if category has reached max entries
+    const categoryClipsCount = audioClips.filter(
+      clip => clip.category === selectedUploadCategory
+    ).length;
+    
+    if (categoryClipsCount >= 10) {
+      toast.error('This category has reached maximum entries (10)');
+      return;
+    }
+
+    // Add the audio clip
+    addAudioClip({
+      title: audioTitle,
+      creator: '0x1234...5678', // Mock wallet address
+      category: selectedUploadCategory,
+    });
+
+    // Award points
+    addPoints(10);
+
     toast.success('Audio uploaded! You earned 10 points! 🎉');
     setSelectedFile(null);
+    setAudioTitle('');
+    setSelectedUploadCategory('');
   };
 
-  const handleVote = (battleId: string, clipId: string) => {
+  const handleVote = (battleId: string, clipId: string, opponentId: string) => {
     setVotedBattles(prev => new Set(prev).add(battleId));
-    toast.success('Vote recorded!');
+    
+    // Update clip stats
+    updateClipStats(clipId, true); // Winner
+    updateClipStats(opponentId, false); // Loser
+    
+    // Award 5 points for voting
+    addPoints(5);
+    
+    toast.success('Vote recorded! You earned 5 points! 🎉');
   };
 
   const filteredBattles = selectedCategory === 'all' 
@@ -139,7 +168,7 @@ const Arena = () => {
                   <Users className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{mockCategories.length}</div>
+                  <div className="text-2xl font-bold">{categories.length}</div>
                   <div className="text-sm text-muted-foreground">Categories</div>
                 </div>
               </div>
@@ -153,7 +182,7 @@ const Arena = () => {
                   <Sparkles className="w-6 h-6 text-accent" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">1,250</div>
+                  <div className="text-2xl font-bold">{userPoints}</div>
                   <div className="text-sm text-muted-foreground">Your Points</div>
                 </div>
               </div>
@@ -183,7 +212,7 @@ const Arena = () => {
           >
             All
           </Badge>
-          {mockCategories.map(cat => (
+          {categoriesWithCount.map(cat => (
             <Badge
               key={cat.id}
               variant={selectedCategory === cat.name ? 'default' : 'outline'}
@@ -225,10 +254,18 @@ const Arena = () => {
 
                 {selectedFile && (
                   <>
-                    <Input placeholder="Audio Title" />
-                    <select className="w-full p-2 rounded-lg glass border border-border">
-                      <option>Select Category</option>
-                      {mockCategories.map(cat => (
+                    <Input 
+                      placeholder="Audio Title" 
+                      value={audioTitle}
+                      onChange={(e) => setAudioTitle(e.target.value)}
+                    />
+                    <select 
+                      className="w-full p-2 rounded-lg glass border border-border"
+                      value={selectedUploadCategory}
+                      onChange={(e) => setSelectedUploadCategory(e.target.value)}
+                    >
+                      <option value="">Select Category</option>
+                      {categoriesWithCount.map(cat => (
                         <option key={cat.id} value={cat.name}>
                           {cat.name} ({cat.entriesCount}/10)
                         </option>
@@ -332,9 +369,12 @@ const Arena = () => {
                                   size="sm"
                                   className="w-full"
                                   disabled={hasVoted}
-                                  onClick={() => handleVote(battle.id, meme.id)}
+                                  onClick={() => {
+                                    const opponent = battle.contestants.find(c => c.id !== meme.id);
+                                    if (opponent) handleVote(battle.id, meme.id, opponent.id);
+                                  }}
                                 >
-                                  {hasVoted ? '✓ Voted' : 'Vote'}
+                                  {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
                                 </Button>
                               </CardContent>
                             </Card>

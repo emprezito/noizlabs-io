@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Sparkles, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useArena } from '@/contexts/ArenaContext';
 
 const CreateCategory = () => {
   const navigate = useNavigate();
+  const { categories, addCategory, addPoints } = useArena();
   const [categoryName, setCategoryName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -18,6 +20,15 @@ const CreateCategory = () => {
       toast.error('Please enter a category name');
       return;
     }
+
+    // Check if category already exists
+    if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase())) {
+      toast.error('Category already exists');
+      return;
+    }
+    
+    addCategory(categoryName);
+    addPoints(50);
     
     toast.success('Category created! You earned 50 points! 🎉');
     setTimeout(() => navigate('/arena'), 1500);

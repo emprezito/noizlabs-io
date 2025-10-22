@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
+import { ArenaProvider } from "./contexts/ArenaContext";
 import Landing from "./pages/Landing";
 import Arena from "./pages/Arena";
 import CreateCategory from "./pages/CreateCategory";
@@ -20,17 +21,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/arena" element={<Arena />} />
-          <Route path="/create-category" element={<CreateCategory />} />
-          <Route path="/launchpad" element={<Launchpad />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/staking" element={<Staking />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ArenaProvider>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/arena" element={<Arena />} />
+            <Route path="/create-category" element={<CreateCategory />} />
+            <Route path="/launchpad" element={<Launchpad />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/staking" element={<Staking />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ArenaProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
