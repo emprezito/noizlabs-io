@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Rocket, Upload, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Rocket, Upload, Sparkles, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Launchpad = () => {
@@ -16,6 +17,7 @@ const Launchpad = () => {
   });
 
   const [previewToken, setPreviewToken] = useState<any>(null);
+  const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,7 +195,12 @@ const Launchpad = () => {
                       </div>
                     </div>
 
-                    <Button variant="hero" className="w-full" size="lg">
+                    <Button 
+                      variant="hero" 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => setShowComingSoonDialog(true)}
+                    >
                       <Rocket className="w-5 h-5" />
                       Launch Token on Solana
                     </Button>
@@ -248,6 +255,58 @@ const Launchpad = () => {
           </div>
         </div>
       </div>
+
+      {/* Coming Soon Dialog */}
+      <Dialog open={showComingSoonDialog} onOpenChange={setShowComingSoonDialog}>
+        <DialogContent className="sm:max-w-md glass-strong border-2 border-primary/50 glow-primary">
+          <DialogHeader className="text-center space-y-4 pb-2">
+            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center glow-primary animate-pulse">
+              <Rocket className="w-10 h-10" />
+            </div>
+            <DialogTitle className="text-3xl font-bold text-gradient">
+              Audio Token Creation
+            </DialogTitle>
+            <div className="space-y-2">
+              <p className="text-xl font-semibold text-primary animate-pulse">
+                Coming Soon!
+              </p>
+              <DialogDescription className="text-base">
+                You will soon be able to launch your audio clips as tokens on Solana. 
+                Be among the first to know when we go live!
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            <div className="glass rounded-lg p-4 space-y-2 border border-primary/30">
+              <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="w-4 h-4" />
+                <span>What to Expect:</span>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 pl-6 list-disc">
+                <li>Instant token creation on Solana</li>
+                <li>AI-powered audio remixing</li>
+                <li>Automatic DEX liquidity pools</li>
+                <li>Trade on our marketplace</li>
+              </ul>
+            </div>
+
+            <Button 
+              variant="hero" 
+              className="w-full"
+              size="lg"
+              onClick={() => window.open('https://t.me/noizlabs_io', '_blank')}
+            >
+              <Send className="w-5 h-5" />
+              Join Telegram Community
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Get exclusive early access and launch updates
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

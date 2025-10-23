@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,9 +8,10 @@ import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 
 export const Navbar = () => {
-  const { userPoints, fetchUserPoints } = useArena();
+  const { userPoints, fetchUserPoints, profiles } = useArena();
   const { walletAddress, isConnected, disconnect } = useSolanaWallet();
   const { setVisible } = useWalletModal();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (walletAddress) {
@@ -23,6 +24,15 @@ export const Navbar = () => {
       disconnect();
     } else {
       setVisible(true);
+    }
+  };
+
+  const handlePointsClick = () => {
+    if (walletAddress) {
+      const userProfile = profiles.find(p => p.wallet_address === walletAddress);
+      if (userProfile) {
+        navigate(`/profile/${userProfile.username}`);
+      }
     }
   };
 
@@ -54,7 +64,11 @@ export const Navbar = () => {
 
           <div className="flex items-center gap-3">
             {isConnected && (
-              <Badge variant="outline" className="border-primary text-primary px-3 py-1.5">
+              <Badge 
+                variant="outline" 
+                className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors"
+                onClick={handlePointsClick}
+              >
                 <Sparkles className="w-3 h-3 mr-1" />
                 {userPoints} Points
               </Badge>
