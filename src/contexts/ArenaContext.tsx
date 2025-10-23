@@ -6,6 +6,7 @@ interface AudioMeme {
   id: string;
   title: string;
   creator: string;
+  creatorUsername?: string;
   category: string;
   categoryId: string;
   votes: number;
@@ -18,12 +19,20 @@ interface Category {
   expiresAt: string;
 }
 
+interface Profile {
+  wallet_address: string;
+  username: string;
+  referral_code: string;
+}
+
 interface ArenaContextType {
   audioClips: AudioMeme[];
   categories: Category[];
   userPoints: number;
+  profiles: Profile[];
   refreshData: () => Promise<void>;
   fetchUserPoints: (walletAddress: string) => Promise<void>;
+  getOrCreateProfile: (walletAddress: string) => Promise<string>;
 }
 
 const ArenaContext = createContext<ArenaContextType | undefined>(undefined);
@@ -32,10 +41,18 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [audioClips, setAudioClips] = useState<AudioMeme[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [userPoints, setUserPoints] = useState<number>(0);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   // Fetch data from database
   const refreshData = async () => {
     try {
+      // Fetch profiles
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      setProfiles(profilesData || []);
+
       // Fetch categories (only non-expired)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
@@ -66,10 +83,12 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const clipsWithVotes = await Promise.all(
         (clipsData || []).map(async (clip: any) => {
           const { data: votesData } = await supabase.rpc('get_clip_votes', { clip_uuid: clip.id });
+          const creatorProfile = (profilesData || []).find((p: any) => p.wallet_address === clip.creator_wallet);
           return {
             id: clip.id,
             title: clip.title,
             creator: clip.creator_wallet,
+            creatorUsername: creatorProfile?.username,
             category: clip.categories.name,
             categoryId: clip.category_id,
             votes: votesData || 0,
@@ -96,6 +115,41 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setUserPoints(data?.points || 0);
     } catch (error) {
       console.error('Error fetching user points:', error);
+    }
+  };
+
+  // Get or create profile for a wallet
+  const getOrCreateProfile = async (walletAddress: string): Promise<string> => {
+    try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+
+      if (existingProfile) {
+        return existingProfile.username;
+      }
+
+      // Create new profile with default username
+      const defaultUsername = `user_${walletAddress.slice(0, 8)}`;
+      const { data: newProfile, error } = await supabase
+        .from('profiles')
+        .insert({
+          wallet_address: walletAddress,
+          username: defaultUsername,
+        })
+        .select('username')
+        .single();
+
+      if (error) throw error;
+      
+      await refreshData();
+      return newProfile.username;
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      return `user_${walletAddress.slice(0, 8)}`;
     }
   };
 
@@ -135,8 +189,10 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     audioClips,
     categories,
     userPoints,
+    profiles,
     refreshData,
     fetchUserPoints,
+    getOrCreateProfile,
   };
 
   return <ArenaContext.Provider value={value}>{children}</ArenaContext.Provider>;

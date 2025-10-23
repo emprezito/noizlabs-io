@@ -12,6 +12,7 @@ import CreateCategory from "./pages/CreateCategory";
 import Launchpad from "./pages/Launchpad";
 import Marketplace from "./pages/Marketplace";
 import Staking from "./pages/Staking";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/launchpad" element={<Launchpad />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/staking" element={<Staking />} />
+              <Route path="/profile/:username" element={<Profile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

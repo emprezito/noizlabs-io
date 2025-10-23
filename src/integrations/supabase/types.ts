@@ -70,6 +70,33 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          updated_at: string
+          username: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          updated_at?: string
+          username: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          updated_at?: string
+          username?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string

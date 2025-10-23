@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2 } from 'lucide-react';
+import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,7 @@ interface Battle {
 
 const Arena = () => {
   const navigate = useNavigate();
-  const { audioClips, categories, refreshData } = useArena();
+  const { audioClips, categories, refreshData, getOrCreateProfile } = useArena();
   const { walletAddress, isConnected } = useSolanaWallet();
   const { setVisible } = useWalletModal();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -30,6 +30,15 @@ const Arena = () => {
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [votedBattles, setVotedBattles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [, setTick] = useState(0);
+
+  // Update countdown every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Generate battles only when clips change
   useEffect(() => {
@@ -93,6 +102,9 @@ const Arena = () => {
       return;
     }
 
+    // Ensure user has a profile
+    await getOrCreateProfile(walletAddress!);
+
     const categoryClipsCount = audioClips.filter(
       clip => clip.categoryId === selectedUploadCategory
     ).length;
@@ -131,7 +143,23 @@ const Arena = () => {
   const handleVote = async (battleId: string, clipId: string) => {
     if (!requireWallet()) return;
 
+    // Ensure user has a profile
+    await getOrCreateProfile(walletAddress!);
+
     try {
+      // Check if user already voted for this clip
+      const { data: existingVotes } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('voter_wallet', walletAddress)
+        .eq('clip_id', clipId)
+        .maybeSingle();
+
+      if (existingVotes) {
+        toast.error('You already voted for this clip!');
+        return;
+      }
+
       // Insert vote
       const { error } = await supabase
         .from('votes')
@@ -178,6 +206,20 @@ const Arena = () => {
     ...cat,
     entriesCount: audioClips.filter(clip => clip.categoryId === cat.id).length,
   }));
+
+  const getTimeRemaining = (expiresAt: string) => {
+    const now = new Date().getTime();
+    const expiry = new Date(expiresAt).getTime();
+    const diff = expiry - now;
+    
+    if (diff <= 0) return 'Expired';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${hours}h ${minutes}m ${seconds}s`;
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-12">
@@ -263,10 +305,14 @@ const Arena = () => {
             <Badge
               key={cat.id}
               variant={selectedCategory === cat.name ? 'default' : 'outline'}
-              className="cursor-pointer px-4 py-2 whitespace-nowrap"
+              className="cursor-pointer px-4 py-2 whitespace-nowrap flex items-center gap-2"
               onClick={() => setSelectedCategory(cat.name)}
             >
-              {cat.name} ({cat.entriesCount}/10)
+              <span>{cat.name} ({cat.entriesCount}/10)</span>
+              <span className="text-xs opacity-75 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {getTimeRemaining(cat.expiresAt)}
+              </span>
             </Badge>
           ))}
         </div>
@@ -351,14 +397,21 @@ const Arena = () => {
               {filteredBattles.length > 0 ? (
                 filteredBattles.map((battle) => {
                   const hasVoted = votedBattles.has(battle.id);
+                  const category = categories.find(c => c.id === battle.categoryId);
                   return (
                     <Card key={battle.id} className="glass-strong border-border">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-lg">1v1 Battle</CardTitle>
-                          <Badge variant="outline" className="border-primary text-primary">
-                            {battle.category}
-                          </Badge>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="border-accent text-accent flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {category && getTimeRemaining(category.expiresAt)}
+                            </Badge>
+                            <Badge variant="outline" className="border-primary text-primary">
+                              {battle.category}
+                            </Badge>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -374,7 +427,18 @@ const Arena = () => {
                                     <Play className="w-6 h-6 text-white" />
                                   </div>
                                   <h3 className="text-lg font-bold mb-1">{meme.title}</h3>
-                                  <p className="text-xs text-muted-foreground mb-1">{meme.creator}</p>
+                                  {meme.creatorUsername ? (
+                                    <Link 
+                                      to={`/profile/${meme.creatorUsername}`}
+                                      className="text-xs text-muted-foreground hover:text-primary transition-colors mb-1 inline-block"
+                                    >
+                                      @{meme.creatorUsername}
+                                    </Link>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground mb-1">
+                                      {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}
+                                    </p>
+                                  )}
                                   <p className="text-sm text-primary font-semibold">{meme.votes} votes</p>
                                 </div>
 
