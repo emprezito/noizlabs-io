@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { Leaderboard } from '@/components/Leaderboard';
 
 interface Battle {
   id: string;
@@ -248,7 +250,7 @@ const Arena = () => {
           </p>
         </div>
 
-        {/* Stats & Categories */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="glass-strong border-border">
             <CardContent className="pt-6">
@@ -308,8 +310,16 @@ const Arena = () => {
           </Card>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
+        {/* Battle Arena and Leaderboard Tabs */}
+        <Tabs defaultValue="arena" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="arena">Battle Arena</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="arena">
+            {/* Category Filter */}
+            <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           <Badge
             variant={selectedCategory === 'all' ? 'default' : 'outline'}
             className="cursor-pointer px-4 py-2"
@@ -508,6 +518,14 @@ const Arena = () => {
             </div>
           </div>
         </div>
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <div className="max-w-4xl mx-auto">
+              <Leaderboard />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
