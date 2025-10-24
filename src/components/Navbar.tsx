@@ -63,6 +63,9 @@ export const Navbar = () => {
             <Link to="/staking" className="text-sm font-medium hover:text-primary transition-colors">
               Staking
             </Link>
+            <Link to="/tasks" className="text-sm font-medium hover:text-primary transition-colors">
+              Tasks
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">

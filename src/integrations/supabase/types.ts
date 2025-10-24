@@ -78,6 +78,9 @@ export type Database = {
           created_at: string
           id: string
           referral_code: string
+          referral_count: number | null
+          referred_by: string | null
+          referred_users: string[] | null
           updated_at: string
           username: string
           wallet_address: string
@@ -86,6 +89,9 @@ export type Database = {
           created_at?: string
           id?: string
           referral_code?: string
+          referral_count?: number | null
+          referred_by?: string | null
+          referred_users?: string[] | null
           updated_at?: string
           username: string
           wallet_address: string
@@ -94,9 +100,45 @@ export type Database = {
           created_at?: string
           id?: string
           referral_code?: string
+          referral_count?: number | null
+          referred_by?: string | null
+          referred_users?: string[] | null
           updated_at?: string
           username?: string
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string | null
+          description: string
+          external_link: string | null
+          id: string
+          max_completions: number | null
+          name: string
+          points_reward: number
+          task_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          external_link?: string | null
+          id?: string
+          max_completions?: number | null
+          name: string
+          points_reward?: number
+          task_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          external_link?: string | null
+          id?: string
+          max_completions?: number | null
+          name?: string
+          points_reward?: number
+          task_type?: string
         }
         Relationships: []
       }
@@ -120,6 +162,41 @@ export type Database = {
           wallet_address?: string
         }
         Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          task_id: string
+          user_wallet: string
+          verified: boolean | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          task_id: string
+          user_wallet: string
+          verified?: boolean | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          task_id?: string
+          user_wallet?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       votes: {
         Row: {
@@ -163,6 +240,10 @@ export type Database = {
         Returns: undefined
       }
       get_clip_votes: { Args: { clip_uuid: string }; Returns: number }
+      verify_referral: {
+        Args: { referred_wallet: string; referrer_wallet: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

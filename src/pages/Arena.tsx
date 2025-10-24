@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock } from 'lucide-react';
+import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock, Music } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
@@ -12,6 +12,7 @@ import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { RemixDialog } from '@/components/RemixDialog';
 import { Leaderboard } from '@/components/Leaderboard';
 
 interface Battle {
@@ -33,6 +34,8 @@ const Arena = () => {
   const [votedBattles, setVotedBattles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [, setTick] = useState(0);
+  const [remixDialogOpen, setRemixDialogOpen] = useState(false);
+  const [selectedRemixClip, setSelectedRemixClip] = useState<{ url: string; title: string } | null>(null);
 
   // Update countdown every second
   useEffect(() => {
@@ -212,6 +215,11 @@ const Arena = () => {
     const shareUrl = `${window.location.origin}/arena?clip=${clipId}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success(`Link copied for ${clipTitle}!`);
+  };
+
+  const handleRemix = (audioUrl: string, title: string) => {
+    setSelectedRemixClip({ url: audioUrl, title });
+    setRemixDialogOpen(true);
   };
 
   const filteredBattles = selectedCategory === 'all' 
@@ -495,6 +503,15 @@ const Arena = () => {
                                   >
                                     <Share2 className="w-4 h-4" />
                                   </Button>
+                                  {meme.audioUrl && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemix(meme.audioUrl, meme.title)}
+                                    >
+                                      <Music className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
@@ -527,6 +544,15 @@ const Arena = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedRemixClip && (
+        <RemixDialog
+          open={remixDialogOpen}
+          onOpenChange={setRemixDialogOpen}
+          audioUrl={selectedRemixClip.url}
+          clipTitle={selectedRemixClip.title}
+        />
+      )}
     </div>
   );
 };
