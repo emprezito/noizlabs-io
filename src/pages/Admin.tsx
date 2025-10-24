@@ -61,7 +61,7 @@ const Admin = () => {
         .from('audio-clips')
         .getPublicUrl(fileName);
 
-      // 2. Create metadata JSON
+      // 2. Create metadata (stored locally, no need to upload)
       const metadata = {
         name: formData.tokenName,
         symbol: formData.symbol,
@@ -73,21 +73,7 @@ const Admin = () => {
         ],
       };
 
-      // 3. Upload metadata to Supabase Storage
-      const metadataFileName = `metadata-${Date.now()}.json`;
-      const { data: metadataUpload, error: metadataError } = await supabase.storage
-        .from('audio-clips')
-        .upload(metadataFileName, JSON.stringify(metadata), {
-          contentType: 'application/json',
-        });
-
-      if (metadataError) throw metadataError;
-
-      const { data: { publicUrl: metadataUrl } } = supabase.storage
-        .from('audio-clips')
-        .getPublicUrl(metadataFileName);
-
-      // 4. Mint SPL Token on Solana
+      // 3. Mint SPL Token on Solana Devnet
       const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
       
       // Create a new mint authority (for demo purposes, in production use proper keypair management)
@@ -136,7 +122,7 @@ const Admin = () => {
         symbol: formData.symbol,
         supply: formData.supply,
         audioUrl: publicUrl,
-        metadataUrl,
+        metadata,
         mintAddress: mint.toBase58(),
         timestamp: new Date().toISOString(),
       };

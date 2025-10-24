@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Rocket, Users } from 'lucide-react';
 
-const Marketplace = () => {
+const Swap = () => {
   return (
     <div className="min-h-screen pt-24 pb-12 flex items-center justify-center">
       <div className="container mx-auto px-4">
@@ -16,7 +16,7 @@ const Marketplace = () => {
               <div className="space-y-4">
                 <h1 className="text-5xl font-bold text-gradient">Coming Soon</h1>
                 <p className="text-xl text-muted-foreground">
-                  Marketplace features are currently under development
+                  Token swap features are currently under development
                 </p>
               </div>
 
@@ -36,7 +36,7 @@ const Marketplace = () => {
               </div>
 
               <div className="text-sm text-muted-foreground">
-                Stay tuned for exciting trading opportunities!
+                Stay tuned for seamless token swapping on our DEX!
               </div>
             </CardContent>
           </Card>
@@ -46,4 +46,4 @@ const Marketplace = () => {
   );
 };
 
-export default Marketplace;
+export default Swap;

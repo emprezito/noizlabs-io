@@ -12,6 +12,7 @@ import CreateCategory from "./pages/CreateCategory";
 import Launchpad from "./pages/Launchpad";
 import Admin from "./pages/Admin";
 import Marketplace from "./pages/Marketplace";
+import Swap from "./pages/Swap";
 import Staking from "./pages/Staking";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/launchpad" element={<Launchpad />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/swap" element={<Swap />} />
               <Route path="/staking" element={<Staking />} />
               <Route path="/profile/:username" element={<Profile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
