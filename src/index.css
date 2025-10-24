@@ -8,57 +8,36 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Electric Pulse Theme - Futuristic Audio-reactive */
-    --background: 240 20% 5%;
-    --foreground: 0 0% 95%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
 
-    --card: 240 17% 6%;
-    --card-foreground: 0 0% 95%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
 
-    --popover: 240 20% 8%;
-    --popover-foreground: 0 0% 95%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
 
-    /* Electric Purple - Primary brand color */
-    --primary: 265 92% 57%;
-    --primary-foreground: 0 0% 95%;
-    --primary-glow: 244 100% 69%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
 
-    /* Vibrant Neon Blue - Secondary actions */
-    --secondary: 192 100% 50%;
-    --secondary-foreground: 240 20% 5%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
 
-    /* Dark cards */
-    --muted: 240 15% 12%;
-    --muted-foreground: 0 0% 70%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
 
-    /* Neon Cyan - Accents and highlights */
-    --accent: 176 100% 50%;
-    --accent-foreground: 240 20% 5%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 210 40% 98%;
 
-    --destructive: 0 85% 60%;
-    --destructive-foreground: 0 0% 95%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
 
-    /* Glass effect borders */
-    --border: 240 20% 20%;
-    --input: 240 20% 15%;
-    --ring: 265 92% 57%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
 
-    --radius: 0.75rem;
+    --ring: 263 70% 50%;
 
-    /* Electric Pulse Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(265, 92%, 57%), hsl(254, 100%, 44%), hsl(192, 100%, 50%));
-    --gradient-secondary: linear-gradient(90deg, hsl(244, 100%, 69%), hsl(176, 100%, 50%));
-    --gradient-dark: linear-gradient(180deg, hsl(240, 20%, 5%), hsl(240, 17%, 6%));
-    
-    /* Glows and shadows */
-    --glow-primary: 0 0 25px rgba(123, 47, 247, 0.4);
-    --glow-secondary: 0 0 25px rgba(0, 201, 255, 0.4);
-    --glow-accent: 0 0 25px rgba(0, 255, 240, 0.4);
-    --shadow-elevated: 0 20px 50px rgba(10, 10, 15, 0.8);
-    
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --radius: 0.5rem;
   }
 }
 
@@ -89,7 +68,7 @@ All colors MUST be HSL.
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary-glow;
+    @apply bg-primary/80;
   }
 }
 
@@ -106,48 +85,10 @@ All colors MUST be HSL.
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  .glow-primary {
-    box-shadow: var(--glow-primary);
-  }
-
-  .glow-secondary {
-    box-shadow: var(--glow-secondary);
-  }
-
-  .glow-accent {
-    box-shadow: var(--glow-accent);
-  }
-
   .text-gradient {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
   }
 }

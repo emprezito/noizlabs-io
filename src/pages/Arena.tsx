@@ -354,7 +354,7 @@ const Arena = () => {
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Upload Section */}
           <div className="lg:col-span-1">
-            <Card className="glass-strong border-border glow-primary sticky top-24">
+            <Card className="glass-strong border-border sticky top-24">
               <CardHeader>
                 <CardTitle>Upload Audio</CardTitle>
                 <CardDescription>Free to upload and compete</CardDescription>
