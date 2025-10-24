@@ -54,6 +54,9 @@ export const Navbar = () => {
             <Link to="/launchpad" className="text-sm font-medium hover:text-primary transition-colors">
               Launchpad
             </Link>
+            <Link to="/admin" className="text-sm font-medium hover:text-primary transition-colors">
+              Admin
+            </Link>
             <Link to="/marketplace" className="text-sm font-medium hover:text-primary transition-colors">
               Marketplace
             </Link>

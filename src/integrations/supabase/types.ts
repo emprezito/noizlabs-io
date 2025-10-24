@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       audio_clips: {
         Row: {
+          audio_url: string | null
           category_id: string
           created_at: string
           creator_wallet: string
@@ -23,6 +24,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          audio_url?: string | null
           category_id: string
           created_at?: string
           creator_wallet: string
@@ -30,6 +32,7 @@ export type Database = {
           title: string
         }
         Update: {
+          audio_url?: string | null
           category_id?: string
           created_at?: string
           creator_wallet?: string

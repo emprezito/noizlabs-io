@@ -10,6 +10,7 @@ interface AudioMeme {
   category: string;
   categoryId: string;
   votes: number;
+  audioUrl?: string;
 }
 
 interface Category {
@@ -92,6 +93,7 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             category: clip.categories.name,
             categoryId: clip.category_id,
             votes: votesData || 0,
+            audioUrl: clip.audio_url,
           };
         })
       );

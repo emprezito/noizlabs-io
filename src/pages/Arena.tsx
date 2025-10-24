@@ -10,6 +10,7 @@ import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { AudioPlayer } from '@/components/AudioPlayer';
 
 interface Battle {
   id: string;
@@ -27,7 +28,6 @@ const Arena = () => {
   const [audioTitle, setAudioTitle] = useState('');
   const [selectedUploadCategory, setSelectedUploadCategory] = useState('');
   const [battles, setBattles] = useState<Battle[]>([]);
-  const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [votedBattles, setVotedBattles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [, setTick] = useState(0);
@@ -81,9 +81,11 @@ const Arena = () => {
     if (!requireWallet()) return;
     
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && file.type.startsWith('audio/')) {
       setSelectedFile(file);
       toast.success('Audio file selected!');
+    } else {
+      toast.error('Please select a valid audio file');
     }
   };
 
@@ -115,13 +117,27 @@ const Arena = () => {
     }
 
     try {
-      // Insert audio clip
+      // Upload audio file to storage
+      const fileName = `${Date.now()}-${selectedFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('audio-clips')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('audio-clips')
+        .getPublicUrl(fileName);
+
+      // Insert audio clip with URL
       const { error } = await supabase
         .from('audio_clips')
         .insert({
           title: audioTitle,
           creator_wallet: walletAddress!,
           category_id: selectedUploadCategory,
+          audio_url: publicUrl,
         });
 
       if (error) throw error;
@@ -442,22 +458,13 @@ const Arena = () => {
                                   <p className="text-sm text-primary font-semibold">{meme.votes} votes</p>
                                 </div>
 
-                                <Button
-                                  variant={isPlaying === meme.id ? "outline" : "ghost"}
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => setIsPlaying(isPlaying === meme.id ? null : meme.id)}
-                                >
-                                  <Play className="w-3 h-3 mr-2" />
-                                  {isPlaying === meme.id ? 'Playing...' : 'Preview'}
-                                </Button>
-
-                                {isPlaying === meme.id && (
-                                  <div className="flex items-center gap-2 px-2">
-                                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                                      <div className="h-full w-1/3 bg-gradient-to-r from-primary to-accent animate-pulse" />
-                                    </div>
-                                    <span className="text-xs text-muted-foreground">0:08</span>
+                                {meme.audioUrl ? (
+                                  <div className="mb-3">
+                                    <AudioPlayer audioUrl={meme.audioUrl} title={meme.title} />
+                                  </div>
+                                ) : (
+                                  <div className="mb-3 glass rounded-lg p-3 text-center">
+                                    <p className="text-xs text-muted-foreground">No audio available</p>
                                   </div>
                                 )}
 
