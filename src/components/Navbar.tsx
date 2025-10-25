@@ -39,6 +39,14 @@ export const Navbar = () => {
   };
 
   const navLinks = [
+    { to: '/arena', label: 'Arena', icon: Trophy },
+    { to: '/launchpad', label: 'Launchpad', icon: Rocket },
+    { to: '/marketplace', label: 'Market', icon: ShoppingBag },
+    { to: '/swap', label: 'Swap', icon: ArrowLeftRight },
+    { to: '/staking', label: 'Staking', icon: Coins },
+  ];
+
+  const desktopNavLinks = [
     { to: '/', label: 'Home', icon: Home },
     { to: '/arena', label: 'Arena', icon: Trophy },
     { to: '/launchpad', label: 'Launchpad', icon: Rocket },
@@ -87,7 +95,7 @@ export const Navbar = () => {
 
         {/* Bottom navigation for mobile */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border pb-safe">
-          <div className="grid grid-cols-7 gap-1 px-2 py-2">
+          <div className="grid grid-cols-5 gap-1 px-2 py-2">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
@@ -117,24 +125,11 @@ export const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/arena" className="text-sm font-medium hover:text-primary transition-colors">
-              Arena
-            </Link>
-            <Link to="/launchpad" className="text-sm font-medium hover:text-primary transition-colors">
-              Launchpad
-            </Link>
-            <Link to="/marketplace" className="text-sm font-medium hover:text-primary transition-colors">
-              Marketplace
-            </Link>
-            <Link to="/swap" className="text-sm font-medium hover:text-primary transition-colors">
-              Swap
-            </Link>
-            <Link to="/staking" className="text-sm font-medium hover:text-primary transition-colors">
-              Staking
-            </Link>
-            <Link to="/tasks" className="text-sm font-medium hover:text-primary transition-colors">
-              Tasks
-            </Link>
+            {desktopNavLinks.map(({ to, label }) => (
+              <Link key={to} to={to} className="text-sm font-medium hover:text-primary transition-colors">
+                {label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">

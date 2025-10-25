@@ -28,6 +28,7 @@ const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referralCode, setReferralCode] = useState('');
 
   useEffect(() => {
     fetchTasks();
@@ -164,6 +165,138 @@ const Tasks = () => {
               <p className="text-center text-muted-foreground">
                 Connect your wallet to start completing tasks and earning points
               </p>
+            </Card>
+          )}
+
+          {isConnected && (
+            <Card className="glass-strong p-6 mb-8 border-primary/20">
+              <h3 className="text-xl font-bold mb-4">Redeem Referral Code</h3>
+              <p className="text-muted-foreground mb-4">
+                Enter a referral code to earn 100 points instantly! The referrer will also receive 100 points.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  placeholder="Enter referral code"
+                  className="flex-1 px-4 py-2 rounded-lg glass border border-border focus:border-primary focus:outline-none"
+                  maxLength={8}
+                />
+                <Button 
+                  onClick={async () => {
+                    if (!referralCode.trim()) {
+                      toast({
+                        title: "Error",
+                        description: "Please enter a referral code",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    try {
+                      // Check if user has already used a referral code
+                      const { data: profileData } = await supabase
+                        .from('profiles')
+                        .select('referred_by')
+                        .eq('wallet_address', walletAddress)
+                        .single();
+
+                      if (profileData?.referred_by) {
+                        toast({
+                          title: "Already used",
+                          description: "You've already used a referral code",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      // Find the referrer by code
+                      const { data: referrerData } = await supabase
+                        .from('profiles')
+                        .select('wallet_address, username')
+                        .eq('referral_code', referralCode)
+                        .single();
+
+                      if (!referrerData) {
+                        toast({
+                          title: "Invalid code",
+                          description: "Referral code not found",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      if (referrerData.wallet_address === walletAddress) {
+                        toast({
+                          title: "Invalid code",
+                          description: "You can't use your own referral code",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      // Check if user has created at least 1 category (verified referral)
+                      const { data: categoriesData } = await supabase
+                        .from('categories')
+                        .select('id')
+                        .eq('creator_wallet', walletAddress)
+                        .limit(1);
+
+                      if (!categoriesData || categoriesData.length === 0) {
+                        toast({
+                          title: "Not verified",
+                          description: "You must create at least 1 category to use a referral code",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      // Update user profile with referred_by
+                      const { error: updateError } = await supabase
+                        .from('profiles')
+                        .update({ referred_by: referrerData.wallet_address })
+                        .eq('wallet_address', walletAddress);
+
+                      if (updateError) throw updateError;
+
+                      // Award 100 points to both user and referrer
+                      await supabase.rpc('add_user_points', {
+                        wallet: walletAddress,
+                        points_to_add: 100,
+                      });
+
+                      await supabase.rpc('add_user_points', {
+                        wallet: referrerData.wallet_address,
+                        points_to_add: 100,
+                      });
+
+                      // Update referrer's referral count and referred_users array
+                      await supabase.rpc('increment_referral_count', {
+                        referrer_wallet: referrerData.wallet_address,
+                      });
+
+                      toast({
+                        title: "Success!",
+                        description: "You and your referrer both earned 100 points!",
+                      });
+
+                      setReferralCode('');
+                      fetchUserTasks();
+                    } catch (error) {
+                      console.error('Error redeeming referral code:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to redeem referral code",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  Redeem
+                </Button>
+              </div>
             </Card>
           )}
 

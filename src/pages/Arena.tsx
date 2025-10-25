@@ -479,12 +479,9 @@ const Arena = () => {
                                   </div>
                                   <h3 className="text-lg font-bold mb-1">{meme.title}</h3>
                                   {meme.creatorUsername ? (
-                                    <Link 
-                                      to={`/profile/${meme.creatorUsername}`}
-                                      className="text-xs text-muted-foreground hover:text-primary transition-colors mb-1 inline-block"
-                                    >
+                                    <p className="text-xs text-muted-foreground mb-1">
                                       @{meme.creatorUsername}
-                                    </Link>
+                                    </p>
                                   ) : (
                                     <p className="text-xs text-muted-foreground mb-1">
                                       {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}

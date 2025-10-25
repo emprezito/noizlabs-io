@@ -102,12 +102,9 @@ export const Leaderboard = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <Link 
-                      to={`/profile/${entry.username}`}
-                      className="font-semibold text-lg hover:text-primary transition-colors"
-                    >
+                    <p className="font-semibold text-lg">
                       @{entry.username}
-                    </Link>
+                    </p>
                     <p className="text-xs text-muted-foreground font-mono">
                       {entry.wallet_address.slice(0, 8)}...{entry.wallet_address.slice(-8)}
                     </p>
