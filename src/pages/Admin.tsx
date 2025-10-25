@@ -150,7 +150,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
+    <div className="min-h-screen pt-24 pb-24 md:pb-12">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 text-gradient">Admin Token Minting</h1>

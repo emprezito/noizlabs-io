@@ -4,7 +4,7 @@ import { Rocket, Users } from 'lucide-react';
 
 const Staking = () => {
   return (
-    <div className="min-h-screen pt-24 pb-12 flex items-center justify-center">
+    <div className="min-h-screen pt-24 pb-24 md:pb-12 flex items-center justify-center">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           <Card className="glass-strong border-border glow-primary">

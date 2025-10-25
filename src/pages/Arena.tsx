@@ -112,6 +112,23 @@ const Arena = () => {
     // Ensure user has a profile
     await getOrCreateProfile(walletAddress!);
 
+    // Check if user already uploaded to this category
+    const userClipInCategory = audioClips.find(
+      clip => clip.categoryId === selectedUploadCategory && clip.creator === walletAddress
+    );
+    
+    if (userClipInCategory) {
+      toast.error('You can only upload 1 clip per category');
+      return;
+    }
+
+    // Check if user is the creator of this category
+    const category = categories.find(cat => cat.id === selectedUploadCategory);
+    if (category && category.creatorWallet === walletAddress) {
+      toast.error("You can't upload to a category you created");
+      return;
+    }
+
     const categoryClipsCount = audioClips.filter(
       clip => clip.categoryId === selectedUploadCategory
     ).length;
@@ -248,7 +265,7 @@ const Arena = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
+    <div className="min-h-screen pt-24 pb-24 md:pb-12">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">

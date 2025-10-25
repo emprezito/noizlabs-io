@@ -39,6 +39,24 @@ const CreateCategory = () => {
       return;
     }
 
+    // Check if user has created 5 categories in the last 24 hours
+    const { data: recentCategories, error: countError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('creator_wallet', walletAddress)
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    if (countError) {
+      console.error('Error checking category limit:', countError);
+      toast.error('Failed to check category limit');
+      return;
+    }
+
+    if (recentCategories && recentCategories.length >= 5) {
+      toast.error('You can only create 5 categories per day');
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -68,7 +86,7 @@ const CreateCategory = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12">
+    <div className="min-h-screen pt-24 pb-24 md:pb-12">
       <div className="container mx-auto px-4 max-w-2xl">
         <Button 
           variant="ghost" 

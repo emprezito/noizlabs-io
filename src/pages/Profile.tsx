@@ -119,8 +119,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-background pt-24 pb-24 md:pb-12">
+      <div className="container mx-auto px-4 max-w-4xl">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/arena')}
