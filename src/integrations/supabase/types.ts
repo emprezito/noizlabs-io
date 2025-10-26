@@ -14,13 +14,236 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audio_clips: {
+        Row: {
+          audio_url: string | null
+          category_id: string
+          created_at: string
+          creator_wallet: string
+          id: string
+          title: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category_id: string
+          created_at?: string
+          creator_wallet: string
+          id?: string
+          title: string
+        }
+        Update: {
+          audio_url?: string | null
+          category_id?: string
+          created_at?: string
+          creator_wallet?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_clips_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          creator_wallet: string
+          expires_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          creator_wallet: string
+          expires_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          creator_wallet?: string
+          expires_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referral_count: number | null
+          referred_by: string | null
+          referred_users: string[] | null
+          updated_at: string
+          username: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referral_count?: number | null
+          referred_by?: string | null
+          referred_users?: string[] | null
+          updated_at?: string
+          username: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referral_count?: number | null
+          referred_by?: string | null
+          referred_users?: string[] | null
+          updated_at?: string
+          username?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string | null
+          description: string
+          external_link: string | null
+          id: string
+          max_completions: number | null
+          name: string
+          points_reward: number
+          task_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          external_link?: string | null
+          id?: string
+          max_completions?: number | null
+          name: string
+          points_reward?: number
+          task_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          external_link?: string | null
+          id?: string
+          max_completions?: number | null
+          name?: string
+          points_reward?: number
+          task_type?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          created_at: string
+          points: number
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          points?: number
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          points?: number
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          task_id: string
+          user_wallet: string
+          verified: boolean | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          task_id: string
+          user_wallet: string
+          verified?: boolean | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          task_id?: string
+          user_wallet?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          battle_id: string
+          clip_id: string
+          created_at: string
+          id: string
+          voter_wallet: string
+        }
+        Insert: {
+          battle_id: string
+          clip_id: string
+          created_at?: string
+          id?: string
+          voter_wallet: string
+        }
+        Update: {
+          battle_id?: string
+          clip_id?: string
+          created_at?: string
+          id?: string
+          voter_wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_clip_id_fkey"
+            columns: ["clip_id"]
+            isOneToOne: false
+            referencedRelation: "audio_clips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_user_points: {
+        Args: { points_to_add: number; wallet: string }
+        Returns: undefined
+      }
+      get_clip_votes: { Args: { clip_uuid: string }; Returns: number }
+      verify_referral: {
+        Args: { referred_wallet: string; referrer_wallet: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
