@@ -214,7 +214,7 @@ const Tasks = () => {
                       // Find the referrer by code
                       const { data: referrerData } = await supabase
                         .from('profiles')
-                        .select('wallet_address, username')
+                        .select('wallet_address, username, referral_count, referred_users')
                         .eq('referral_code', referralCode)
                         .single();
 
@@ -272,9 +272,13 @@ const Tasks = () => {
                       });
 
                       // Update referrer's referral count and referred_users array
-                      await supabase.rpc('increment_referral_count', {
-                        referrer_wallet: referrerData.wallet_address,
-                      });
+                      await supabase
+                        .from('profiles')
+                        .update({ 
+                          referral_count: (referrerData.referral_count || 0) + 1,
+                          referred_users: [...(referrerData.referred_users || []), walletAddress]
+                        })
+                        .eq('wallet_address', referrerData.wallet_address);
 
                       toast({
                         title: "Success!",
