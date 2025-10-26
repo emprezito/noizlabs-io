@@ -325,7 +325,7 @@ export default function Profile() {
                     <input
                       type="text"
                       value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      onChange={(e) => setReferralCode(e.target.value)}
                       placeholder="Enter referral code"
                       className="flex-1 px-4 py-2 rounded-lg glass border border-border focus:border-primary focus:outline-none"
                       maxLength={8}
@@ -352,7 +352,7 @@ export default function Profile() {
                           const { data: referrerData } = await supabase
                             .from('profiles')
                             .select('wallet_address, username, referral_count, referred_users')
-                            .eq('referral_code', referralCode)
+                            .ilike('referral_code', referralCode)
                             .single();
 
                           if (!referrerData) {
