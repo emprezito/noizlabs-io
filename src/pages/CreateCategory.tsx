@@ -73,7 +73,59 @@ const CreateCategory = () => {
       // Award 50 points
       await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });
 
-      toast.success('Category created successfully! 🎉');
+      // Check if this is user's first category and they were referred
+      const { data: userCategories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('creator_wallet', walletAddress);
+
+      const isFirstCategory = userCategories && userCategories.length === 1;
+
+      if (isFirstCategory) {
+        // Check if user was referred
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('referred_by')
+          .eq('wallet_address', walletAddress)
+          .single();
+
+        if (profileData?.referred_by) {
+          // Award 100 points to both user and referrer
+          await supabase.rpc('add_user_points', {
+            wallet: walletAddress,
+            points_to_add: 100,
+          });
+
+          await supabase.rpc('add_user_points', {
+            wallet: profileData.referred_by,
+            points_to_add: 100,
+          });
+
+          // Update referrer's referral count and referred_users array
+          const { data: referrerData } = await supabase
+            .from('profiles')
+            .select('referral_count, referred_users')
+            .eq('wallet_address', profileData.referred_by)
+            .single();
+
+          if (referrerData) {
+            await supabase
+              .from('profiles')
+              .update({ 
+                referral_count: (referrerData.referral_count || 0) + 1,
+                referred_users: [...(referrerData.referred_users || []), walletAddress]
+              })
+              .eq('wallet_address', profileData.referred_by);
+          }
+
+          toast.success('Category created! You and your referrer earned 100 points each! 🎉');
+        } else {
+          toast.success('Category created successfully! 🎉');
+        }
+      } else {
+        toast.success('Category created successfully! 🎉');
+      }
+
       await refreshData();
       await fetchUserPoints(walletAddress);
       navigate('/arena');

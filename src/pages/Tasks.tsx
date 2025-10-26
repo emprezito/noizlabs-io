@@ -195,7 +195,7 @@ const Tasks = () => {
             <Card className="glass-strong p-6 mb-8 border-primary/20">
               <h3 className="text-xl font-bold mb-4">Redeem Referral Code</h3>
               <p className="text-muted-foreground mb-4">
-                Enter a referral code to earn 100 points instantly! The referrer will also receive 100 points.
+                Enter a referral code, then create your first category to earn 100 points for you and your referrer!
               </p>
               <div className="flex gap-2">
                 <input
@@ -259,23 +259,7 @@ const Tasks = () => {
                         return;
                       }
 
-                      // Check if user has created at least 1 category (verified referral)
-                      const { data: categoriesData } = await supabase
-                        .from('categories')
-                        .select('id')
-                        .eq('creator_wallet', walletAddress)
-                        .limit(1);
-
-                      if (!categoriesData || categoriesData.length === 0) {
-                        toast({
-                          title: "Not verified",
-                          description: "You must create at least 1 category to use a referral code",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-
-                      // Update user profile with referred_by
+                      // Update user profile with referred_by (no points yet - must create category first)
                       const { error: updateError } = await supabase
                         .from('profiles')
                         .update({ referred_by: referrerData.wallet_address })
@@ -283,29 +267,9 @@ const Tasks = () => {
 
                       if (updateError) throw updateError;
 
-                      // Award 100 points to both user and referrer
-                      await supabase.rpc('add_user_points', {
-                        wallet: walletAddress,
-                        points_to_add: 100,
-                      });
-
-                      await supabase.rpc('add_user_points', {
-                        wallet: referrerData.wallet_address,
-                        points_to_add: 100,
-                      });
-
-                      // Update referrer's referral count and referred_users array
-                      await supabase
-                        .from('profiles')
-                        .update({ 
-                          referral_count: (referrerData.referral_count || 0) + 1,
-                          referred_users: [...(referrerData.referred_users || []), walletAddress]
-                        })
-                        .eq('wallet_address', referrerData.wallet_address);
-
                       toast({
-                        title: "Success!",
-                        description: "You and your referrer both earned 100 points!",
+                        title: "Referral code saved!",
+                        description: "Create your first category to earn 100 points for you and your referrer!",
                       });
 
                       setReferralCode('');
