@@ -1,9 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Rocket, Users } from 'lucide-react';
-import { useArena } from '@/contexts/ArenaContext';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { TopFiveTokens } from './TopFiveTokens';
 
 const Marketplace = () => {
   return (
