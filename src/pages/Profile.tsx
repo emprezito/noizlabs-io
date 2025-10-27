@@ -76,6 +76,72 @@ export default function Profile() {
     }
   }, [username, walletAddress]);
 
+  // Set up real-time subscriptions for task updates
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Subscribe to daily_quests changes
+    const dailyQuestChannel = supabase
+      .channel('daily-quests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_quests',
+          filter: `user_wallet=eq.${walletAddress}`
+        },
+        () => {
+          fetchDailyQuest();
+          fetchProfile();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to user_tasks changes
+    const userTasksChannel = supabase
+      .channel('user-tasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_tasks',
+          filter: `user_wallet=eq.${walletAddress}`
+        },
+        () => {
+          fetchUserTasks();
+          fetchProfile();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to user_points changes
+    const pointsChannel = supabase
+      .channel('user-points-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_points',
+          filter: `wallet_address=eq.${walletAddress}`
+        },
+        () => {
+          fetchProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(dailyQuestChannel);
+      supabase.removeChannel(userTasksChannel);
+      supabase.removeChannel(pointsChannel);
+    };
+  }, [walletAddress]);
+
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -282,8 +348,9 @@ export default function Profile() {
         toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
       }
       
-      fetchDailyQuest();
-      fetchProfile();
+      // Refresh will be handled by real-time subscription
+      await fetchDailyQuest();
+      await fetchProfile();
     } catch (e) {
       console.error('Error checking in:', e);
       toast.error('Failed to check in');
@@ -324,7 +391,9 @@ export default function Profile() {
         if (pointsError) throw pointsError;
 
         toast.success(`You earned ${task.points_reward} points!`);
-        fetchUserTasks();
+        // Refresh will be handled by real-time subscription
+        await fetchUserTasks();
+        await fetchProfile();
       }
     } catch (error) {
       console.error('Error completing task:', error);
@@ -472,12 +541,12 @@ export default function Profile() {
                     </div>
                   </div>
                   
-                  {dailyQuest.streak_count > 0 && (
+                  {dailyQuest.checkin_done && (
                     <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-medium">🔥 Daily Streak: {dailyQuest.streak_count}/7 days</p>
                         <p className="text-xs text-muted-foreground">
-                          {dailyQuest.streak_count >= 7 ? '100 pts earned!' : `${100 - dailyQuest.streak_count * 14} pts to go`}
+                          {dailyQuest.streak_count >= 7 ? '100 pts earned!' : `${100 - (dailyQuest.streak_count * 14)} pts remaining`}
                         </p>
                       </div>
                       <div className="w-full bg-background/50 rounded-full h-2 overflow-hidden">
