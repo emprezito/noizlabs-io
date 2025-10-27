@@ -53,7 +53,6 @@ export const Navbar = () => {
     { to: '/marketplace', label: 'Market', icon: ShoppingBag },
     { to: '/swap', label: 'Swap', icon: ArrowLeftRight },
     { to: '/staking', label: 'Staking', icon: Coins },
-    { to: '/tasks', label: 'Tasks', icon: ListChecks },
   ];
 
   if (isMobile) {

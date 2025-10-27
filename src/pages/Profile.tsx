@@ -216,18 +216,26 @@ export default function Profile() {
   const handleDailyCheckin = async () => {
     if (!walletAddress) return;
     
-    // Check if already done
-    if (dailyQuest.checkin_done) {
-      toast.error('You already checked in today!');
-      return;
-    }
-    
     const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
     
     try {
+      // First, check the database to see if check-in was already done today
+      const { data: todayQuest } = await supabase
+        .from('daily_quests')
+        .select('checkin_done')
+        .eq('user_wallet', walletAddress)
+        .eq('date', today)
+        .maybeSingle();
+      
+      if (todayQuest?.checkin_done) {
+        toast.error('You already checked in today!');
+        return;
+      }
+      
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      
       // Get yesterday's quest to check streak
       const { data: yesterdayQuest } = await supabase
         .from('daily_quests')
@@ -263,7 +271,17 @@ export default function Profile() {
         .eq('user_wallet', walletAddress)
         .eq('date', today);
       
-      toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
+      // Check if streak reached 7 days
+      if (newStreak === 7) {
+        await supabase.rpc('add_user_points', {
+          wallet: walletAddress,
+          points_to_add: 100,
+        });
+        toast.success(`🎉 7-day streak complete! +110 points total!`);
+      } else {
+        toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
+      }
+      
       fetchDailyQuest();
       fetchProfile();
     } catch (e) {
@@ -456,7 +474,18 @@ export default function Profile() {
                   
                   {dailyQuest.streak_count > 0 && (
                     <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                      <p className="text-sm font-medium">🔥 Daily Streak: {dailyQuest.streak_count} days</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium">🔥 Daily Streak: {dailyQuest.streak_count}/7 days</p>
+                        <p className="text-xs text-muted-foreground">
+                          {dailyQuest.streak_count >= 7 ? '100 pts earned!' : `${100 - dailyQuest.streak_count * 14} pts to go`}
+                        </p>
+                      </div>
+                      <div className="w-full bg-background/50 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-primary to-accent h-full transition-all duration-500"
+                          style={{ width: `${Math.min((dailyQuest.streak_count / 7) * 100, 100)}%` }}
+                        />
+                      </div>
                     </div>
                   )}
                   
@@ -499,6 +528,41 @@ export default function Profile() {
                         <Button size="sm" onClick={() => navigate('/arena')}>Go Vote</Button>
                       )}
                     </div>
+                  </div>
+                </Card>
+
+                {/* Social Tasks */}
+                <Card className="glass-strong p-6 border-primary/20">
+                  <h3 className="text-xl font-bold mb-4">Tasks</h3>
+                  <div className="space-y-4">
+                    {tasks.filter(task => task.task_type === 'social').map((task) => {
+                      const completed = isTaskCompleted(task.id);
+                      
+                      return (
+                        <div
+                          key={task.id}
+                          className={`flex items-center justify-between p-4 bg-background/50 rounded-lg border transition-all ${
+                            completed
+                              ? 'border-primary/50'
+                              : 'border-border hover:border-primary/30'
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium">{task.name}</p>
+                            <p className="text-sm text-muted-foreground">{task.description}</p>
+                            <p className="text-sm text-primary font-semibold mt-1">+{task.points_reward} points</p>
+                          </div>
+                          {completed ? (
+                            <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
+                          ) : (
+                            <Button size="sm" onClick={() => handleCompleteTask(task)} className="gap-2">
+                              Complete
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </Card>
 
@@ -573,79 +637,62 @@ export default function Profile() {
                   </div>
                 </Card>
 
-                <div className="space-y-4">
-                  {tasks.map((task) => {
-                    const completed = isTaskCompleted(task.id);
-                    const isReferral = task.task_type === 'referral';
-                    
-                    return (
-                      <Card
-                        key={task.id}
-                        className={`glass p-6 border transition-all ${
-                          completed
-                            ? 'border-primary/50 glow-primary'
-                            : 'border-border hover:border-primary/30'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-xl font-bold">{task.name}</h3>
-                              {completed && (
-                                <div className="flex items-center gap-1 text-primary text-sm">
-                                  <Check className="w-4 h-4" />
-                                  <span>Completed</span>
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-muted-foreground mb-4">
-                              {task.description}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-primary font-bold text-lg">
-                                +{task.points_reward} points
-                              </span>
-                              {isReferral && (
-                                <span className="text-sm text-muted-foreground">
-                                  (per referral)
-                                </span>
-                              )}
-                            </div>
+                {/* Referral Task */}
+                {tasks.filter(task => task.task_type === 'referral').map((task) => {
+                  const completed = isTaskCompleted(task.id);
+                  
+                  return (
+                    <Card
+                      key={task.id}
+                      className={`glass p-6 border transition-all ${
+                        completed
+                          ? 'border-primary/50 glow-primary'
+                          : 'border-border hover:border-primary/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold">{task.name}</h3>
+                            {completed && (
+                              <div className="flex items-center gap-1 text-primary text-sm">
+                                <Check className="w-4 h-4" />
+                                <span>Completed</span>
+                              </div>
+                            )}
                           </div>
-
-                          {!completed && (
-                            <Button
-                              onClick={() => handleCompleteTask(task)}
-                              disabled={isReferral}
-                              className="gap-2"
-                              variant={isReferral ? "outline" : "default"}
-                            >
-                              {isReferral ? (
-                                <>
-                                  <Clock className="w-4 h-4" />
-                                  Auto-tracked
-                                </>
-                              ) : (
-                                <>
-                                  Complete
-                                  <ExternalLink className="w-4 h-4" />
-                                </>
-                              )}
-                            </Button>
-                          )}
+                          <p className="text-muted-foreground mb-4">
+                            {task.description}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary font-bold text-lg">
+                              +{task.points_reward} points
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              (per referral)
+                            </span>
+                          </div>
                         </div>
 
-                        {isReferral && (
-                          <div className="mt-4 p-4 bg-background/50 rounded-lg">
-                            <p className="text-sm text-muted-foreground">
-                              Share your referral code: <strong>{profile.referral_code}</strong>. When referred users redeem your code after creating a category, you'll both earn 100 points!
-                            </p>
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
+                        <Button
+                          onClick={() => handleCompleteTask(task)}
+                          disabled={true}
+                          className="gap-2"
+                          variant="outline"
+                        >
+                          <Clock className="w-4 h-4" />
+                          Auto-tracked
+                        </Button>
+                      </div>
+
+                      <div className="mt-4 p-4 bg-background/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          Share your referral code: <strong>{profile.referral_code}</strong>. When referred users redeem your code after creating a category, you'll both earn 100 points!
+                        </p>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             </TabsContent>
           )}
