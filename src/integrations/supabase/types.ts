@@ -80,9 +80,11 @@ export type Database = {
           created_category: boolean
           date: string
           id: string
+          last_streak_date: string | null
           rewarded_category: boolean
           rewarded_checkin: boolean
           rewarded_votes: boolean
+          streak_count: number | null
           updated_at: string
           user_wallet: string
           votes_count: number
@@ -93,9 +95,11 @@ export type Database = {
           created_category?: boolean
           date?: string
           id?: string
+          last_streak_date?: string | null
           rewarded_category?: boolean
           rewarded_checkin?: boolean
           rewarded_votes?: boolean
+          streak_count?: number | null
           updated_at?: string
           user_wallet: string
           votes_count?: number
@@ -106,9 +110,11 @@ export type Database = {
           created_category?: boolean
           date?: string
           id?: string
+          last_streak_date?: string | null
           rewarded_category?: boolean
           rewarded_checkin?: boolean
           rewarded_votes?: boolean
+          streak_count?: number | null
           updated_at?: string
           user_wallet?: string
           votes_count?: number

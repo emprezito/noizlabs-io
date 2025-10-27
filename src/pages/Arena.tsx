@@ -223,16 +223,32 @@ const Arena = () => {
       const today = new Date().toISOString().slice(0, 10);
       const { data: dq } = await supabase
         .from('daily_quests')
-        .select('id, votes_count')
+        .select('id, votes_count, rewarded_votes')
         .eq('user_wallet', walletAddress!)
         .eq('date', today)
         .maybeSingle();
 
       if (dq) {
+        const newVoteCount = (dq.votes_count || 0) + 1;
         await supabase
           .from('daily_quests')
-          .update({ votes_count: (dq.votes_count || 0) + 1 })
+          .update({ votes_count: newVoteCount })
           .eq('id', dq.id);
+
+        // Award 5 points when reaching 20 votes (if not already rewarded)
+        if (newVoteCount >= 20 && !dq.rewarded_votes) {
+          await supabase.rpc('add_user_points', {
+            wallet: walletAddress!,
+            points_to_add: 5,
+          });
+
+          await supabase
+            .from('daily_quests')
+            .update({ rewarded_votes: true })
+            .eq('id', dq.id);
+
+          toast.success('Daily vote quest complete! +5 points 🎉');
+        }
       } else {
         await supabase
           .from('daily_quests')
@@ -437,7 +453,7 @@ const Arena = () => {
                     </select>
                     <Badge variant="outline" className="border-primary text-primary w-full justify-center py-2">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      Earn 10 Points
+                      Earn 5 Points
                     </Badge>
                     <Button variant="glow" className="w-full" onClick={handleUpload}>
                       <Zap className="w-4 h-4 mr-2" />
@@ -451,9 +467,9 @@ const Arena = () => {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>• Connect your Solana wallet</p>
                     <p>• Upload audio clips for free</p>
-                    <p>• Earn 10 points per upload</p>
+                    <p>• Earn 5 points per upload</p>
                     <p>• Max 10 entries per category</p>
-                    <p>• Vote to earn 5 points</p>
+                    <p>• Vote to earn 1 point</p>
                     <p>• Share clips to get votes</p>
                     <p>• Top clip wins 25 points after 24h</p>
                   </div>

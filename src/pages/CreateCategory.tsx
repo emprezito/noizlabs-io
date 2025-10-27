@@ -72,9 +72,31 @@ const CreateCategory = () => {
 
       // Mark daily quest: created a category today
       const today = new Date().toISOString().slice(0, 10);
+      
+      const { data: questData } = await supabase
+        .from('daily_quests')
+        .select('rewarded_category')
+        .eq('user_wallet', walletAddress)
+        .eq('date', today)
+        .maybeSingle();
+
       await supabase
         .from('daily_quests')
         .upsert({ user_wallet: walletAddress, date: today, created_category: true }, { onConflict: 'user_wallet,date' });
+
+      // Award 10 points for daily quest if not already rewarded
+      if (!questData?.rewarded_category) {
+        await supabase.rpc('add_user_points', {
+          wallet: walletAddress,
+          points_to_add: 10,
+        });
+
+        await supabase
+          .from('daily_quests')
+          .update({ rewarded_category: true })
+          .eq('user_wallet', walletAddress)
+          .eq('date', today);
+      }
 
       // Award 50 points
       await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });

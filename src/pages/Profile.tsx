@@ -48,7 +48,24 @@ export default function Profile() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [referralCode, setReferralCode] = useState('');
-  const [dailyQuest, setDailyQuest] = useState<{ checkin_done: boolean; created_category: boolean; votes_count: number }>({ checkin_done: false, created_category: false, votes_count: 0 });
+  const [dailyQuest, setDailyQuest] = useState<{ 
+    checkin_done: boolean; 
+    created_category: boolean; 
+    votes_count: number;
+    streak_count: number;
+    rewarded_checkin: boolean;
+    rewarded_category: boolean;
+    rewarded_votes: boolean;
+  }>({ 
+    checkin_done: false, 
+    created_category: false, 
+    votes_count: 0, 
+    streak_count: 0,
+    rewarded_checkin: false,
+    rewarded_category: false,
+    rewarded_votes: false,
+  });
+  const [timeUntilReset, setTimeUntilReset] = useState<string>('');
 
   useEffect(() => {
     fetchProfile();
@@ -157,7 +174,7 @@ export default function Profile() {
     try {
       const { data } = await supabase
         .from('daily_quests')
-        .select('checkin_done, created_category, votes_count')
+        .select('checkin_done, created_category, votes_count, streak_count, rewarded_checkin, rewarded_category, rewarded_votes')
         .eq('user_wallet', walletAddress)
         .eq('date', today)
         .maybeSingle();
@@ -165,21 +182,90 @@ export default function Profile() {
         checkin_done: data?.checkin_done || false,
         created_category: data?.created_category || false,
         votes_count: data?.votes_count || 0,
+        streak_count: data?.streak_count || 0,
+        rewarded_checkin: data?.rewarded_checkin || false,
+        rewarded_category: data?.rewarded_category || false,
+        rewarded_votes: data?.rewarded_votes || false,
       });
     } catch (e) {
       console.error('Error fetching daily quest:', e);
     }
   };
 
+  // Update countdown timer every second
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const diff = tomorrow.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeUntilReset(`${hours}h ${minutes}m ${seconds}s`);
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleDailyCheckin = async () => {
     if (!walletAddress) return;
+    
+    // Check if already done
+    if (dailyQuest.checkin_done) {
+      toast.error('You already checked in today!');
+      return;
+    }
+    
     const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    
     try {
+      // Get yesterday's quest to check streak
+      const { data: yesterdayQuest } = await supabase
+        .from('daily_quests')
+        .select('streak_count, date')
+        .eq('user_wallet', walletAddress)
+        .eq('date', yesterdayStr)
+        .maybeSingle();
+      
+      const newStreak = yesterdayQuest ? yesterdayQuest.streak_count + 1 : 1;
+      
+      // Create today's quest with check-in done
       await supabase
         .from('daily_quests')
-        .upsert({ user_wallet: walletAddress, date: today, checkin_done: true }, { onConflict: 'user_wallet,date' });
-      toast.success('Checked in for today!');
+        .upsert({ 
+          user_wallet: walletAddress, 
+          date: today, 
+          checkin_done: true,
+          streak_count: newStreak,
+          last_streak_date: today,
+          rewarded_checkin: false
+        }, { onConflict: 'user_wallet,date' });
+      
+      // Award 10 points
+      await supabase.rpc('add_user_points', {
+        wallet: walletAddress,
+        points_to_add: 10,
+      });
+      
+      // Mark as rewarded
+      await supabase
+        .from('daily_quests')
+        .update({ rewarded_checkin: true })
+        .eq('user_wallet', walletAddress)
+        .eq('date', today);
+      
+      toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
       fetchDailyQuest();
+      fetchProfile();
     } catch (e) {
       console.error('Error checking in:', e);
       toast.error('Failed to check in');
@@ -359,13 +445,27 @@ export default function Profile() {
             <TabsContent value="tasks">
               <div className="max-w-4xl mx-auto space-y-6">
                 {/* Daily Quests */}
-                <Card className="glass-strong p-6 border-destructive/20">
-                  <h3 className="text-xl font-bold mb-4">Daily Quests</h3>
+                <Card className="glass-strong p-6 border-primary/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold">Daily Quests</h3>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Resets in</p>
+                      <p className="text-sm font-mono text-primary">{timeUntilReset}</p>
+                    </div>
+                  </div>
+                  
+                  {dailyQuest.streak_count > 0 && (
+                    <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <p className="text-sm font-medium">🔥 Daily Streak: {dailyQuest.streak_count} days</p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
+                      <div className="flex-1">
                         <p className="font-medium">Daily Check-in</p>
-                        <p className="text-sm text-muted-foreground">Come back every day to check in</p>
+                        <p className="text-sm text-muted-foreground">Check in every day to build your streak</p>
+                        <p className="text-sm text-primary font-semibold mt-1">+10 points</p>
                       </div>
                       {dailyQuest.checkin_done ? (
                         <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
@@ -373,10 +473,12 @@ export default function Profile() {
                         <Button size="sm" onClick={handleDailyCheckin}>Check-in</Button>
                       )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
+                      <div className="flex-1">
                         <p className="font-medium">Create a Category</p>
                         <p className="text-sm text-muted-foreground">Create at least one category today</p>
+                        <p className="text-sm text-primary font-semibold mt-1">+10 points</p>
                       </div>
                       {dailyQuest.created_category ? (
                         <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
@@ -384,10 +486,12 @@ export default function Profile() {
                         <Button size="sm" onClick={() => navigate('/create-category')}>Create</Button>
                       )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
+                      <div className="flex-1">
                         <p className="font-medium">Vote on 20 Audio Clips</p>
                         <p className="text-sm text-muted-foreground">Progress: {dailyQuest.votes_count}/20</p>
+                        <p className="text-sm text-primary font-semibold mt-1">+5 points</p>
                       </div>
                       {dailyQuest.votes_count >= 20 ? (
                         <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
