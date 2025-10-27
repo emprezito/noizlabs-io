@@ -73,6 +73,48 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_quests: {
+        Row: {
+          checkin_done: boolean
+          created_at: string
+          created_category: boolean
+          date: string
+          id: string
+          rewarded_category: boolean
+          rewarded_checkin: boolean
+          rewarded_votes: boolean
+          updated_at: string
+          user_wallet: string
+          votes_count: number
+        }
+        Insert: {
+          checkin_done?: boolean
+          created_at?: string
+          created_category?: boolean
+          date?: string
+          id?: string
+          rewarded_category?: boolean
+          rewarded_checkin?: boolean
+          rewarded_votes?: boolean
+          updated_at?: string
+          user_wallet: string
+          votes_count?: number
+        }
+        Update: {
+          checkin_done?: boolean
+          created_at?: string
+          created_category?: boolean
+          date?: string
+          id?: string
+          rewarded_category?: boolean
+          rewarded_checkin?: boolean
+          rewarded_votes?: boolean
+          updated_at?: string
+          user_wallet?: string
+          votes_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

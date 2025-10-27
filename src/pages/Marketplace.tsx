@@ -1,6 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Rocket, Users } from 'lucide-react';
+import { useArena } from '@/contexts/ArenaContext';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const Marketplace = () => {
   return (
@@ -14,11 +17,14 @@ const Marketplace = () => {
               </div>
               
               <div className="space-y-4">
-                <h1 className="text-5xl font-bold text-gradient">Coming Soon</h1>
-                <p className="text-xl text-muted-foreground">
-                  Marketplace features are currently under development
+                <h1 className="text-4xl md:text-5xl font-bold text-gradient">Top 5 sounds from the Arena - Now tokenized</h1>
+                <p className="text-muted-foreground">
+                  Every week the top 5 sounds from the arena are turned into tradable tokens.
                 </p>
               </div>
+
+              {/* Top 5 list synced from Arena */}
+              <TopFiveTokens />
 
               <div className="glass rounded-lg p-6 space-y-4">
                 <p className="text-lg">

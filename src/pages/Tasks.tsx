@@ -45,7 +45,7 @@ const Tasks = () => {
           .single();
         
         if (profileData?.username) {
-          navigate(`/profile/${profileData.username}`);
+          navigate(`/profile/${profileData.username}?tab=tasks`);
         }
       }
     };

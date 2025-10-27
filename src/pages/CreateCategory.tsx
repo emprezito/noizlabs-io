@@ -70,6 +70,12 @@ const CreateCategory = () => {
 
       if (error) throw error;
 
+      // Mark daily quest: created a category today
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase
+        .from('daily_quests')
+        .upsert({ user_wallet: walletAddress, date: today, created_category: true }, { onConflict: 'user_wallet,date' });
+
       // Award 50 points
       await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,9 @@ export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { walletAddress } = useSolanaWallet();
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') === 'tasks') ? 'tasks' : 'profile';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -45,12 +48,14 @@ export default function Profile() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [referralCode, setReferralCode] = useState('');
+  const [dailyQuest, setDailyQuest] = useState<{ checkin_done: boolean; created_category: boolean; votes_count: number }>({ checkin_done: false, created_category: false, votes_count: 0 });
 
   useEffect(() => {
     fetchProfile();
     if (isOwnProfile) {
       fetchTasks();
       fetchUserTasks();
+      fetchDailyQuest();
     }
   }, [username, walletAddress]);
 
@@ -146,6 +151,41 @@ export default function Profile() {
     }
   };
 
+  const fetchDailyQuest = async () => {
+    if (!walletAddress) return;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const { data } = await supabase
+        .from('daily_quests')
+        .select('checkin_done, created_category, votes_count')
+        .eq('user_wallet', walletAddress)
+        .eq('date', today)
+        .maybeSingle();
+      setDailyQuest({
+        checkin_done: data?.checkin_done || false,
+        created_category: data?.created_category || false,
+        votes_count: data?.votes_count || 0,
+      });
+    } catch (e) {
+      console.error('Error fetching daily quest:', e);
+    }
+  };
+
+  const handleDailyCheckin = async () => {
+    if (!walletAddress) return;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await supabase
+        .from('daily_quests')
+        .upsert({ user_wallet: walletAddress, date: today, checkin_done: true }, { onConflict: 'user_wallet,date' });
+      toast.success('Checked in for today!');
+      fetchDailyQuest();
+    } catch (e) {
+      console.error('Error checking in:', e);
+      toast.error('Failed to check in');
+    }
+  };
+
   const isTaskCompleted = (taskId: string) => {
     return userTasks.some(ut => ut.task_id === taskId && ut.verified);
   };
@@ -226,11 +266,13 @@ export default function Profile() {
           Back to Arena
         </Button>
 
-        <Tabs defaultValue="profile" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {isOwnProfile && (
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks</TabsTrigger>
+              <TabsTrigger value="tasks" className="relative">Tasks {(!dailyQuest.checkin_done || !dailyQuest.created_category || dailyQuest.votes_count < 20) && (
+                <span className="ml-2 inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" aria-label="tasks pending"></span>
+              )}</TabsTrigger>
             </TabsList>
           )}
 
@@ -313,9 +355,49 @@ export default function Profile() {
             </Card>
           </TabsContent>
 
-          {isOwnProfile && (
+           {isOwnProfile && (
             <TabsContent value="tasks">
               <div className="max-w-4xl mx-auto space-y-6">
+                {/* Daily Quests */}
+                <Card className="glass-strong p-6 border-destructive/20">
+                  <h3 className="text-xl font-bold mb-4">Daily Quests</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Daily Check-in</p>
+                        <p className="text-sm text-muted-foreground">Come back every day to check in</p>
+                      </div>
+                      {dailyQuest.checkin_done ? (
+                        <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
+                      ) : (
+                        <Button size="sm" onClick={handleDailyCheckin}>Check-in</Button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Create a Category</p>
+                        <p className="text-sm text-muted-foreground">Create at least one category today</p>
+                      </div>
+                      {dailyQuest.created_category ? (
+                        <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
+                      ) : (
+                        <Button size="sm" onClick={() => navigate('/create-category')}>Create</Button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Vote on 20 Audio Clips</p>
+                        <p className="text-sm text-muted-foreground">Progress: {dailyQuest.votes_count}/20</p>
+                      </div>
+                      {dailyQuest.votes_count >= 20 ? (
+                        <Badge variant="secondary" className="gap-1"><Check className="w-4 h-4" /> Done</Badge>
+                      ) : (
+                        <Button size="sm" onClick={() => navigate('/arena')}>Go Vote</Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
                 <Card className="glass-strong p-6 border-primary/20">
                   <h3 className="text-xl font-bold mb-4">Redeem Referral Code</h3>
                   <p className="text-muted-foreground mb-4">

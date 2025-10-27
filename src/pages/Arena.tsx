@@ -164,10 +164,10 @@ const Arena = () => {
 
       if (error) throw error;
 
-      // Award points
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 10 });
+      // Award points (reduced to 5)
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
 
-      toast.success('Audio uploaded! You earned 10 points! 🎉');
+      toast.success('Audio uploaded! You earned 5 points! 🎉');
       setSelectedFile(null);
       setAudioTitle('');
       setSelectedUploadCategory('');
@@ -216,11 +216,31 @@ const Arena = () => {
         return;
       }
 
-      // Award points
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
+      // Award points (reduced to 1)
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 1 });
+
+      // Update daily quests votes count
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: dq } = await supabase
+        .from('daily_quests')
+        .select('id, votes_count')
+        .eq('user_wallet', walletAddress!)
+        .eq('date', today)
+        .maybeSingle();
+
+      if (dq) {
+        await supabase
+          .from('daily_quests')
+          .update({ votes_count: (dq.votes_count || 0) + 1 })
+          .eq('id', dq.id);
+      } else {
+        await supabase
+          .from('daily_quests')
+          .insert({ user_wallet: walletAddress!, date: today, votes_count: 1 });
+      }
 
       setVotedBattles(prev => new Set(prev).add(battleId));
-      toast.success('Vote recorded! You earned 5 points!');
+      toast.success('Vote recorded! You earned 1 point!');
       refreshData();
     } catch (error: any) {
       console.error('Error voting:', error);
