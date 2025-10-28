@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Copy, Trophy, User, ArrowLeft, ExternalLink, Check, Clock } from 'lucide-react';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
+import { useWalletAuth } from '@/hooks/useWalletAuth';
 
 interface Task {
   id: string;
@@ -38,6 +39,7 @@ export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { walletAddress } = useSolanaWallet();
+  const { isAuthenticated } = useWalletAuth();
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') === 'tasks') ? 'tasks' : 'profile';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
@@ -280,20 +282,21 @@ export default function Profile() {
   }, []);
 
   const handleDailyCheckin = async () => {
-    if (!walletAddress) return;
+    if (!walletAddress) {
+      toast.error('Please connect your wallet');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in with your wallet first');
+      return;
+    }
     
     const today = new Date().toISOString().slice(0, 10);
     
     try {
-      // First, check the database to see if check-in was already done today
-      const { data: todayQuest } = await supabase
-        .from('daily_quests')
-        .select('checkin_done')
-        .eq('user_wallet', walletAddress)
-        .eq('date', today)
-        .maybeSingle();
-      
-      if (todayQuest?.checkin_done) {
+      // Check if already checked in today
+      if (dailyQuest.checkin_done) {
         toast.error('You already checked in today!');
         return;
       }
@@ -312,48 +315,49 @@ export default function Profile() {
       
       const newStreak = yesterdayQuest ? yesterdayQuest.streak_count + 1 : 1;
       
-      // Create today's quest with check-in done
-      await supabase
+      // Insert today's quest (will fail if already exists due to unique constraint)
+      const { error: insertError } = await supabase
         .from('daily_quests')
-        .upsert({ 
+        .insert({ 
           user_wallet: walletAddress, 
           date: today, 
           checkin_done: true,
           streak_count: newStreak,
           last_streak_date: today,
-          rewarded_checkin: false
-        }, { onConflict: 'user_wallet,date' });
+          rewarded_checkin: true
+        });
       
-      // Award 10 points
-      await supabase.rpc('add_user_points', {
+      if (insertError) {
+        if (insertError.code === '23505') { // Unique constraint violation
+          toast.error('You already checked in today!');
+          return;
+        }
+        throw insertError;
+      }
+      
+      // Award points
+      const basePoints = 10;
+      const bonusPoints = newStreak === 7 ? 100 : 0;
+      const totalPoints = basePoints + bonusPoints;
+      
+      const { error: pointsError } = await supabase.rpc('add_user_points', {
         wallet: walletAddress,
-        points_to_add: 10,
+        points_to_add: totalPoints,
       });
       
-      // Mark as rewarded
-      await supabase
-        .from('daily_quests')
-        .update({ rewarded_checkin: true })
-        .eq('user_wallet', walletAddress)
-        .eq('date', today);
+      if (pointsError) throw pointsError;
       
-      // Check if streak reached 7 days
       if (newStreak === 7) {
-        await supabase.rpc('add_user_points', {
-          wallet: walletAddress,
-          points_to_add: 100,
-        });
         toast.success(`🎉 7-day streak complete! +110 points total!`);
       } else {
         toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
       }
       
-      // Refresh will be handled by real-time subscription
       await fetchDailyQuest();
       await fetchProfile();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error checking in:', e);
-      toast.error('Failed to check in');
+      toast.error(e.message || 'Failed to check in');
     }
   };
 
@@ -362,7 +366,15 @@ export default function Profile() {
   };
 
   const handleCompleteTask = async (task: Task) => {
-    if (!walletAddress) return;
+    if (!walletAddress) {
+      toast.error('Please connect your wallet');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in with your wallet first');
+      return;
+    }
 
     if (isTaskCompleted(task.id)) {
       toast.error("You've already completed this task");
@@ -373,7 +385,7 @@ export default function Profile() {
       if (task.task_type === 'social' && task.external_link) {
         window.open(task.external_link, '_blank');
         
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('user_tasks')
           .insert({
             user_wallet: walletAddress,
@@ -381,23 +393,28 @@ export default function Profile() {
             verified: true,
           });
 
-        if (error) throw error;
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw insertError;
+        }
 
         const { error: pointsError } = await supabase.rpc('add_user_points', {
           wallet: walletAddress,
           points_to_add: task.points_reward,
         });
 
-        if (pointsError) throw pointsError;
+        if (pointsError) {
+          console.error('Points error:', pointsError);
+          throw pointsError;
+        }
 
         toast.success(`You earned ${task.points_reward} points!`);
-        // Refresh will be handled by real-time subscription
         await fetchUserTasks();
         await fetchProfile();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error completing task:', error);
-      toast.error("Failed to complete task");
+      toast.error(error.message || "Failed to complete task");
     }
   };
 

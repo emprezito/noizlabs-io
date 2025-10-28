@@ -3,14 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Radio, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks } from 'lucide-react';
+import { Wallet, Radio, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Loader2 } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
+import { useWalletAuth } from '@/hooks/useWalletAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const Navbar = () => {
   const { userPoints, fetchUserPoints, profiles } = useArena();
   const { walletAddress, isConnected, disconnect } = useSolanaWallet();
+  const { isAuthenticated, isAuthenticating } = useWalletAuth();
   const { setVisible } = useWalletModal();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -37,6 +39,13 @@ export const Navbar = () => {
     } else {
       setVisible(true);
     }
+  };
+
+  const getWalletButtonText = () => {
+    if (isAuthenticating) return 'Authenticating...';
+    if (!isConnected) return 'Connect';
+    if (isConnected && !isAuthenticated) return 'Signing...';
+    return `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}`;
   };
 
   const handlePointsClick = () => {
@@ -80,15 +89,13 @@ export const Navbar = () => {
               </Link>
 
               {/* Wallet Address (center) */}
-              <Button variant="ghost" size="sm" onClick={handleWalletClick} className="text-xs px-2">
-                <Wallet className="w-3 h-3 mr-1" />
-                {isConnected 
-                  ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
-                  : 'Connect'}
+              <Button variant="ghost" size="sm" onClick={handleWalletClick} className="text-xs px-2" disabled={isAuthenticating}>
+                {isAuthenticating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Wallet className="w-3 h-3 mr-1" />}
+                {getWalletButtonText()}
               </Button>
 
               {/* Points (right) */}
-              {isConnected && (
+              {isConnected && isAuthenticated && (
                 <Badge 
                   variant="outline" 
                   className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs"
@@ -142,7 +149,7 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {isConnected && (
+            {isConnected && isAuthenticated && (
               <Badge 
                 variant="outline" 
                 className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors"
@@ -152,11 +159,20 @@ export const Navbar = () => {
                 {userPoints} Points
               </Badge>
             )}
-            <Button variant="neon" size="sm" onClick={handleWalletClick}>
-              <Wallet className="w-4 h-4 mr-2" />
-              {isConnected 
-                ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
-                : 'Connect Wallet'}
+            <Button variant="neon" size="sm" onClick={handleWalletClick} disabled={isAuthenticating}>
+              {isAuthenticating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-4 h-4 mr-2" />
+                  {isConnected 
+                    ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
+                    : 'Connect Wallet'}
+                </>
+              )}
             </Button>
           </div>
         </div>
