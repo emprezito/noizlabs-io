@@ -287,6 +287,10 @@ export type Database = {
         Args: { points_to_add: number; wallet: string }
         Returns: undefined
       }
+      add_user_points_secure: {
+        Args: { points_to_add: number; target_wallet: string }
+        Returns: undefined
+      }
       get_clip_votes: { Args: { clip_uuid: string }; Returns: number }
       verify_referral: {
         Args: { referred_wallet: string; referrer_wallet: string }

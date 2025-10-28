@@ -126,7 +126,7 @@ export const TopFiveTokens = () => {
                   className="w-full"
                   onClick={() => handleComingSoon('Trading')}
                 >
-                  Trade on Raydium
+                  Trade on NoizLabs DEX
                 </Button>
                 {idx < 3 && (
                   <Button 
