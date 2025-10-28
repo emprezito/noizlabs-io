@@ -125,6 +125,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          ip_address: string | null
           referral_code: string
           referral_count: number | null
           referred_by: string | null
@@ -137,6 +138,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          ip_address?: string | null
           referral_code?: string
           referral_count?: number | null
           referred_by?: string | null
@@ -149,6 +151,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          ip_address?: string | null
           referral_code?: string
           referral_count?: number | null
           referred_by?: string | null

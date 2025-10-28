@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Radio, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Loader2 } from 'lucide-react';
+import { Wallet, Radio, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Loader2, User } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { useWalletAuth } from '@/hooks/useWalletAuth';
@@ -121,16 +121,23 @@ export const Navbar = () => {
                 {getWalletButtonText()}
               </Button>
 
-              {/* Points (right) */}
+              {/* Profile & Points (right) */}
               {isConnected && isAuthenticated && (
-                <Badge 
-                  variant="outline" 
-                  className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs"
+                <div 
+                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={handlePointsClick}
                 >
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  {userPoints}
-                </Badge>
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className="border-primary text-primary px-2 py-1 text-xs"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {userPoints}
+                  </Badge>
+                </div>
               )}
             </div>
           </div>

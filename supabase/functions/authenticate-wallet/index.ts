@@ -24,7 +24,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('Authenticating wallet:', walletAddress);
+    // Get client IP address for Sybil protection
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+
+    console.log('Authenticating wallet:', walletAddress, 'from IP:', clientIp);
 
     // Verify the signature using Web Crypto API
     const verified = await verifySignature(walletAddress, signature, message);
@@ -46,9 +51,26 @@ serve(async (req) => {
     // Check if user exists with this wallet
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, wallet_address, username')
+      .select('user_id, wallet_address, username, ip_address')
       .eq('wallet_address', walletAddress)
       .single();
+
+    // Sybil protection: Check if this IP has been used with a different wallet
+    if (!existingProfile && clientIp !== 'unknown') {
+      const { data: ipCheck } = await supabaseAdmin
+        .from('profiles')
+        .select('wallet_address')
+        .eq('ip_address', clientIp)
+        .single();
+
+      if (ipCheck) {
+        console.log('Sybil attempt detected: IP', clientIp, 'already used by wallet', ipCheck.wallet_address);
+        return new Response(
+          JSON.stringify({ error: 'This IP address is already associated with another wallet' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     let userId: string;
     let isNewUser = false;
@@ -85,21 +107,25 @@ serve(async (req) => {
       isNewUser = true;
       console.log('New user created:', userId);
 
-      // Update or create profile with user_id
+      // Update or create profile with user_id and IP
       if (existingProfile) {
-        // Update existing profile with user_id
+        // Update existing profile with user_id and IP
         await supabaseAdmin
           .from('profiles')
-          .update({ user_id: userId })
+          .update({ 
+            user_id: userId,
+            ip_address: clientIp 
+          })
           .eq('wallet_address', walletAddress);
       } else {
-        // Create new profile
+        // Create new profile with IP
         await supabaseAdmin
           .from('profiles')
           .insert({
             user_id: userId,
             wallet_address: walletAddress,
             username: username || `User_${walletAddress.slice(0, 8)}`,
+            ip_address: clientIp,
           });
       }
     }
