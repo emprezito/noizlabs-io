@@ -8,6 +8,7 @@ import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { useWalletAuth } from '@/hooks/useWalletAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 export const Navbar = () => {
   const { userPoints, fetchUserPoints, profiles } = useArena();
@@ -33,11 +34,37 @@ export const Navbar = () => {
     }
   }, [walletAddress]);
 
-  const handleWalletClick = () => {
+  const handleWalletClick = async () => {
     if (isConnected) {
       disconnect();
     } else {
-      setVisible(true);
+      // On mobile, use deep linking to Phantom
+      if (isMobile) {
+        // Check if Phantom is installed by looking for the provider
+        const isPhantomInstalled = 'phantom' in window || 'solana' in window;
+        
+        if (!isPhantomInstalled) {
+          // User doesn't have Phantom, redirect to install or open in Phantom browser
+          toast.info('Opening Phantom Wallet', {
+            description: 'You will be redirected to Phantom. If not installed, please install it first.',
+          });
+          
+          // Try to open in Phantom browser
+          const currentUrl = window.location.href;
+          const phantomUrl = `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}?ref=${encodeURIComponent(window.location.origin)}`;
+          
+          // Small delay for toast to show
+          setTimeout(() => {
+            window.location.href = phantomUrl;
+          }, 500);
+        } else {
+          // Phantom is installed, use the modal
+          setVisible(true);
+        }
+      } else {
+        // Desktop: use the normal modal
+        setVisible(true);
+      }
     }
   };
 
