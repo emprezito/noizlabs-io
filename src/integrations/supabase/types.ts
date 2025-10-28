@@ -130,6 +130,7 @@ export type Database = {
           referred_by: string | null
           referred_users: string[] | null
           updated_at: string
+          user_id: string | null
           username: string
           wallet_address: string
         }
@@ -141,6 +142,7 @@ export type Database = {
           referred_by?: string | null
           referred_users?: string[] | null
           updated_at?: string
+          user_id?: string | null
           username: string
           wallet_address: string
         }
@@ -152,6 +154,7 @@ export type Database = {
           referred_by?: string | null
           referred_users?: string[] | null
           updated_at?: string
+          user_id?: string | null
           username?: string
           wallet_address?: string
         }
@@ -292,6 +295,10 @@ export type Database = {
         Returns: undefined
       }
       get_clip_votes: { Args: { clip_uuid: string }; Returns: number }
+      get_or_create_wallet_user: {
+        Args: { p_username?: string; p_wallet_address: string }
+        Returns: string
+      }
       verify_referral: {
         Args: { referred_wallet: string; referrer_wallet: string }
         Returns: undefined

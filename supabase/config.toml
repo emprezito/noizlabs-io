@@ -2,3 +2,6 @@ project_id = "pcvhetatlmydhmppzxak"
 
 [functions.remix-audio]
 verify_jwt = false
+
+[functions.authenticate-wallet]
+verify_jwt = false
