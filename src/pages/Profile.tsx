@@ -260,10 +260,24 @@ export default function Profile() {
     }
   };
 
-  // Update countdown timer every second
+  // Update countdown timer every second and refetch when day changes
   useEffect(() => {
+    let lastDate = new Date().toISOString().slice(0, 10);
+    
     const updateTimer = () => {
       const now = new Date();
+      const currentDate = now.toISOString().slice(0, 10);
+      
+      // Check if the date has changed (new day)
+      if (currentDate !== lastDate) {
+        lastDate = currentDate;
+        // Refetch daily quests when a new day starts
+        if (walletAddress) {
+          fetchDailyQuest();
+          fetchProfile();
+        }
+      }
+      
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
@@ -279,7 +293,7 @@ export default function Profile() {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [walletAddress]);
 
   const handleDailyCheckin = async () => {
     if (!walletAddress) {
