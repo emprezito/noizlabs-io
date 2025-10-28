@@ -69,7 +69,7 @@ export default function Profile() {
 
   useEffect(() => {
     fetchProfile();
-    if (isOwnProfile) {
+    if (walletAddress) {
       fetchTasks();
       fetchUserTasks();
       fetchDailyQuest();
