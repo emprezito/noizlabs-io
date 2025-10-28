@@ -260,24 +260,10 @@ export default function Profile() {
     }
   };
 
-  // Update countdown timer every second and refetch when day changes
+  // Update countdown timer every second
   useEffect(() => {
-    let lastDate = new Date().toISOString().slice(0, 10);
-    
     const updateTimer = () => {
       const now = new Date();
-      const currentDate = now.toISOString().slice(0, 10);
-      
-      // Check if the date has changed (new day)
-      if (currentDate !== lastDate) {
-        lastDate = currentDate;
-        // Refetch daily quests when a new day starts
-        if (walletAddress) {
-          fetchDailyQuest();
-          fetchProfile();
-        }
-      }
-      
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
@@ -293,7 +279,7 @@ export default function Profile() {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [walletAddress]);
+  }, []);
 
   const handleDailyCheckin = async () => {
     if (!walletAddress) {
@@ -306,65 +292,38 @@ export default function Profile() {
       return;
     }
     
-    const today = new Date().toISOString().slice(0, 10);
-    
     try {
-      // Check if already checked in today
+      // Check if already checked in today (client-side check for UX)
       if (dailyQuest.checkin_done) {
         toast.error('You already checked in today!');
         return;
       }
       
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      // Call secure edge function that uses SERVER-SIDE date
+      const { data: session } = await supabase.auth.getSession();
       
-      // Get yesterday's quest to check streak
-      const { data: yesterdayQuest } = await supabase
-        .from('daily_quests')
-        .select('streak_count, date')
-        .eq('user_wallet', walletAddress)
-        .eq('date', yesterdayStr)
-        .maybeSingle();
-      
-      const newStreak = yesterdayQuest ? yesterdayQuest.streak_count + 1 : 1;
-      
-      // Insert today's quest (will fail if already exists due to unique constraint)
-      const { error: insertError } = await supabase
-        .from('daily_quests')
-        .insert({ 
-          user_wallet: walletAddress, 
-          date: today, 
-          checkin_done: true,
-          streak_count: newStreak,
-          last_streak_date: today,
-          rewarded_checkin: true
-        });
-      
-      if (insertError) {
-        if (insertError.code === '23505') { // Unique constraint violation
-          toast.error('You already checked in today!');
-          return;
-        }
-        throw insertError;
+      if (!session?.session?.access_token) {
+        toast.error('Please sign in again');
+        return;
       }
-      
-      // Award points
-      const basePoints = 10;
-      const bonusPoints = newStreak === 7 ? 100 : 0;
-      const totalPoints = basePoints + bonusPoints;
-      
-      const { error: pointsError } = await supabase.rpc('add_user_points', {
-        wallet: walletAddress,
-        points_to_add: totalPoints,
+
+      const { data, error } = await supabase.functions.invoke('daily-checkin', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
+        }
       });
       
-      if (pointsError) throw pointsError;
+      if (error) throw error;
       
-      if (newStreak === 7) {
-        toast.success(`🎉 7-day streak complete! +110 points total!`);
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+      
+      if (data.isStreakComplete) {
+        toast.success(`🎉 7-day streak complete! +${data.points} points total!`);
       } else {
-        toast.success(`Checked in! +10 points. Streak: ${newStreak} days 🔥`);
+        toast.success(`Checked in! +${data.points} points. Streak: ${data.streak} days 🔥`);
       }
       
       await fetchDailyQuest();
