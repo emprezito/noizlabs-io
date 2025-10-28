@@ -14,6 +14,16 @@ export const Navbar = () => {
   const { setVisible } = useWalletModal();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [isTabletOrMobile, setIsTabletOrMobile] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsTabletOrMobile(window.innerWidth < 1024);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   useEffect(() => {
     if (walletAddress) {
@@ -55,10 +65,10 @@ export const Navbar = () => {
     { to: '/staking', label: 'Staking', icon: Coins },
   ];
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <>
-        {/* Top bar for mobile */}
+        {/* Top bar for mobile and tablet */}
         <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-14">
@@ -92,7 +102,7 @@ export const Navbar = () => {
           </div>
         </nav>
 
-        {/* Bottom navigation for mobile */}
+        {/* Bottom navigation for mobile and tablet */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border pb-safe">
           <div className="grid grid-cols-5 gap-1 px-2 py-2">
             {navLinks.map(({ to, label, icon: Icon }) => (
