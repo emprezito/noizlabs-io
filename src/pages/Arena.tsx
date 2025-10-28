@@ -86,11 +86,17 @@ const Arena = () => {
     if (!requireWallet()) return;
     
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
-      setSelectedFile(file);
-      toast.success('Audio file selected!');
-    } else {
-      toast.error('Please select a valid audio file');
+    if (file) {
+      // Check MIME type or file extension for audio files
+      const isAudio = file.type.startsWith('audio/') || 
+                      /\.(mp3|wav|ogg|aac|m4a)$/i.test(file.name);
+      
+      if (isAudio) {
+        setSelectedFile(file);
+        toast.success('Audio file selected!');
+      } else {
+        toast.error('Please select a valid audio file');
+      }
     }
   };
 
@@ -417,7 +423,7 @@ const Arena = () => {
                   <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <Input
                     type="file"
-                    accept="audio/*"
+                    accept="audio/*,.aac,.m4a"
                     onChange={handleFileUpload}
                     className="hidden"
                     id="audio-upload"
@@ -427,7 +433,7 @@ const Arena = () => {
                       {selectedFile ? selectedFile.name : 'Click to upload'}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      MP3, WAV, or OGG (max 30s)
+                      MP3, WAV, OGG, AAC, or M4A (max 30s)
                     </p>
                   </label>
                 </div>
