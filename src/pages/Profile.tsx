@@ -300,16 +300,16 @@ export default function Profile() {
       }
       
       // Call secure edge function that uses SERVER-SIDE date
-      const { data: session } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.session?.access_token) {
+      if (!session?.access_token) {
         toast.error('Please sign in again');
         return;
       }
 
       const { data, error } = await supabase.functions.invoke('daily-checkin', {
         headers: {
-          Authorization: `Bearer ${session.session.access_token}`
+          Authorization: `Bearer ${session.access_token}`
         }
       });
       
