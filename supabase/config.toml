@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.authenticate-wallet]
 verify_jwt = false
+
+[functions.daily-checkin]
+verify_jwt = false
+
+[functions.reset-daily-quests]
+verify_jwt = false
