@@ -61,45 +61,32 @@ const CreateCategory = () => {
     
     try {
       // Create category
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('categories')
         .insert({
           name: categoryName,
           creator_wallet: walletAddress,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
 
       // Mark daily quest: created a category today
       const today = new Date().toISOString().slice(0, 10);
       
-      const { data: questData } = await supabase
-        .from('daily_quests')
-        .select('rewarded_category')
-        .eq('user_wallet', walletAddress)
-        .eq('date', today)
-        .maybeSingle();
-
       await supabase
         .from('daily_quests')
         .upsert({ user_wallet: walletAddress, date: today, created_category: true }, { onConflict: 'user_wallet,date' });
 
-      // Award 10 points for daily quest if not already rewarded
-      if (!questData?.rewarded_category) {
-        await supabase.rpc('add_user_points', {
-          wallet: walletAddress,
-          points_to_add: 10,
+      // Award 50 points + daily quest bonus via secure edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await supabase.functions.invoke('award-points', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: { action: 'category', data: { categoryId: insertData.id } }
         });
-
-        await supabase
-          .from('daily_quests')
-          .update({ rewarded_category: true })
-          .eq('user_wallet', walletAddress)
-          .eq('date', today);
       }
-
-      // Award 50 points
-      await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });
 
       // Check if this is user's first category and they were referred
       const { data: userCategories } = await supabase
@@ -117,34 +104,15 @@ const CreateCategory = () => {
           .eq('wallet_address', walletAddress)
           .single();
 
-        if (profileData?.referred_by) {
-          // Award 100 points to both user and referrer
-          await supabase.rpc('add_user_points', {
-            wallet: walletAddress,
-            points_to_add: 100,
+        if (profileData?.referred_by && session?.access_token) {
+          // Award 100 points to both via secure edge function
+          await supabase.functions.invoke('award-points', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { 
+              action: 'referral', 
+              data: { categoryId: insertData.id, referrerWallet: profileData.referred_by } 
+            }
           });
-
-          await supabase.rpc('add_user_points', {
-            wallet: profileData.referred_by,
-            points_to_add: 100,
-          });
-
-          // Update referrer's referral count and referred_users array
-          const { data: referrerData } = await supabase
-            .from('profiles')
-            .select('referral_count, referred_users')
-            .eq('wallet_address', profileData.referred_by)
-            .single();
-
-          if (referrerData) {
-            await supabase
-              .from('profiles')
-              .update({ 
-                referral_count: (referrerData.referral_count || 0) + 1,
-                referred_users: [...(referrerData.referred_users || []), walletAddress]
-              })
-              .eq('wallet_address', profileData.referred_by);
-          }
 
           toast.success('Category created! You and your referrer earned 100 points each! 🎉');
         } else {

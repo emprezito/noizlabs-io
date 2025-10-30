@@ -159,19 +159,27 @@ const Arena = () => {
         .getPublicUrl(fileName);
 
       // Insert audio clip with URL
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('audio_clips')
         .insert({
           title: audioTitle,
           creator_wallet: walletAddress!,
           category_id: selectedUploadCategory,
           audio_url: publicUrl,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
 
-      // Award points (reduced to 5)
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
+      // Award points via secure edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await supabase.functions.invoke('award-points', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: { action: 'upload', data: { clipId: insertData.id } }
+        });
+      }
 
       toast.success('Audio uploaded! You earned 5 points! 🎉');
       setSelectedFile(null);
@@ -205,13 +213,15 @@ const Arena = () => {
       }
 
       // Insert vote
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from('votes')
         .insert({
           voter_wallet: walletAddress!,
           clip_id: clipId,
           battle_id: battleId,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -221,9 +231,6 @@ const Arena = () => {
         }
         return;
       }
-
-      // Award points (reduced to 1)
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 1 });
 
       // Update daily quests votes count
       const today = new Date().toISOString().slice(0, 10);

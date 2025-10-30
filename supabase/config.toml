@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.reset-daily-quests]
 verify_jwt = false
+
+[functions.award-points]
+verify_jwt = true

@@ -12,6 +12,20 @@ serve(async (req) => {
   }
 
   try {
+    // Verify cron secret
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    const providedSecret = req.headers.get('x-cron-secret')
+    
+    if (!providedSecret || providedSecret !== cronSecret) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401 
+        }
+      )
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -32,6 +46,19 @@ serve(async (req) => {
     }
 
     console.log(`Successfully deleted ${count || 0} old daily quest records`)
+    
+    // Log the reset to audit table
+    const { error: auditError } = await supabase
+      .from('resets_audit')
+      .insert({
+        reset_type: 'daily_quests',
+        records_affected: count || 0,
+        actor: 'system:cron'
+      })
+    
+    if (auditError) {
+      console.error('Audit log error:', auditError)
+    }
 
     return new Response(
       JSON.stringify({ 

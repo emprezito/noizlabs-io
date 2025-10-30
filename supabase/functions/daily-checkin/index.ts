@@ -13,8 +13,8 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
@@ -24,14 +24,14 @@ serve(async (req) => {
 
     // Verify the user's JWT token
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     
     if (authError || !user) {
       throw new Error('Unauthorized')
     }
 
     // Get the user's wallet address from their profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('wallet_address')
       .eq('user_id', user.id)
@@ -39,6 +39,11 @@ serve(async (req) => {
 
     if (profileError || !profile) {
       throw new Error('Profile not found')
+    }
+    
+    // Validate wallet address format
+    if (!profile.wallet_address || profile.wallet_address.length < 32) {
+      throw new Error('Invalid wallet address')
     }
 
     const walletAddress = profile.wallet_address
@@ -49,7 +54,7 @@ serve(async (req) => {
     console.log(`Check-in attempt for wallet: ${walletAddress}, date: ${today}`)
 
     // Check if already checked in today
-    const { data: existingQuest } = await supabase
+    const { data: existingQuest } = await supabaseAdmin
       .from('daily_quests')
       .select('checkin_done')
       .eq('user_wallet', walletAddress)
@@ -74,7 +79,7 @@ serve(async (req) => {
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayStr = yesterday.toISOString().slice(0, 10)
     
-    const { data: yesterdayQuest } = await supabase
+    const { data: yesterdayQuest } = await supabaseAdmin
       .from('daily_quests')
       .select('streak_count, checkin_done')
       .eq('user_wallet', walletAddress)
@@ -84,11 +89,11 @@ serve(async (req) => {
     const newStreak = (yesterdayQuest?.checkin_done) ? (yesterdayQuest.streak_count || 0) + 1 : 1
     
     // Insert today's quest with server-side date
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('daily_quests')
       .insert({ 
         user_wallet: walletAddress, 
-        date: today, // SERVER-SIDE DATE
+        date: today,
         checkin_done: true,
         streak_count: newStreak,
         last_streak_date: today,
@@ -111,17 +116,22 @@ serve(async (req) => {
       throw insertError
     }
     
-    // Award points
+    // Award points using internal function with service role
     const basePoints = 10
     const bonusPoints = newStreak === 7 ? 100 : 0
     const totalPoints = basePoints + bonusPoints
     
-    const { error: pointsError } = await supabase.rpc('add_user_points', {
-      wallet: walletAddress,
+    const { error: pointsError } = await supabaseAdmin.rpc('add_user_points_internal', {
+      target_wallet: walletAddress,
       points_to_add: totalPoints,
+      reason: `Daily check-in (streak: ${newStreak})`,
+      actor: 'system:daily-checkin'
     })
     
-    if (pointsError) throw pointsError
+    if (pointsError) {
+      console.error('Points error:', pointsError)
+      throw pointsError
+    }
     
     console.log(`Check-in successful for ${walletAddress}. Streak: ${newStreak}, Points: ${totalPoints}`)
 

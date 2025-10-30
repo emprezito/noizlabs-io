@@ -358,27 +358,28 @@ export default function Profile() {
       if (task.task_type === 'social' && task.external_link) {
         window.open(task.external_link, '_blank');
         
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('user_tasks')
           .insert({
             user_wallet: walletAddress,
             task_id: task.id,
             verified: true,
-          });
+          })
+          .select('id')
+          .single();
 
         if (insertError) {
           console.error('Insert error:', insertError);
           throw insertError;
         }
 
-        const { error: pointsError } = await supabase.rpc('add_user_points', {
-          wallet: walletAddress,
-          points_to_add: task.points_reward,
-        });
-
-        if (pointsError) {
-          console.error('Points error:', pointsError);
-          throw pointsError;
+        // Award points via secure edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await supabase.functions.invoke('award-points', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { action: 'task', data: { taskId: task.id } }
+          });
         }
 
         toast.success(`You earned ${task.points_reward} points!`);

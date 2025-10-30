@@ -15,13 +15,75 @@ serve(async (req) => {
   }
 
   try {
-    const { walletAddress, signature, message, username } = await req.json();
-
-    if (!walletAddress || !signature || !message) {
+    // Limit request body size
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > 10000) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ error: 'Request too large' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 413 }
+      )
+    }
+
+    const body = await req.json()
+    const { walletAddress, signature, message, username } = body
+
+    // Validate wallet address
+    if (!walletAddress || typeof walletAddress !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid wallet address' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+    
+    // Solana addresses are 32-44 characters base58
+    if (walletAddress.length < 32 || walletAddress.length > 44) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid wallet address length' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+    
+    // Validate base58 format
+    if (!/^[1-9A-HJ-NP-Za-km-z]+$/.test(walletAddress)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid wallet address format' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Validate signature
+    if (!signature || typeof signature !== 'string' || 
+        signature.length < 64 || signature.length > 88) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Validate message
+    if (!message || typeof message !== 'string' || message.length > 500) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid message' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Validate username (optional field)
+    if (username !== undefined) {
+      if (typeof username !== 'string' || username.length > 50) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid username length' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      
+      // Alphanumeric, underscore, hyphen only
+      if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid username format' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
     }
 
     // Get client IP address for Sybil protection
