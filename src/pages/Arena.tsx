@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock, Music } from 'lucide-react';
+import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock, Music, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
@@ -14,6 +14,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { RemixDialog } from '@/components/RemixDialog';
 import { Leaderboard } from '@/components/Leaderboard';
+import { AllCategoriesDialog } from '@/components/AllCategoriesDialog';
 
 interface Battle {
   id: string;
@@ -36,6 +37,8 @@ const Arena = () => {
   const [, setTick] = useState(0);
   const [remixDialogOpen, setRemixDialogOpen] = useState(false);
   const [selectedRemixClip, setSelectedRemixClip] = useState<{ url: string; title: string } | null>(null);
+  const [allCategoriesOpen, setAllCategoriesOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
 
   // Update countdown every second
   useEffect(() => {
@@ -250,10 +253,14 @@ const Arena = () => {
 
         // Award 5 points when reaching 20 votes (if not already rewarded)
         if (newVoteCount >= 20 && !dq.rewarded_votes) {
-          await supabase.rpc('add_user_points', {
-            wallet: walletAddress!,
-            points_to_add: 5,
-          });
+          // Award points via secure edge function
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            await supabase.functions.invoke('award-points', {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: { action: 'vote', data: { voteId: insertData.id } }
+            });
+          }
 
           await supabase
             .from('daily_quests')
@@ -392,30 +399,67 @@ const Arena = () => {
           </TabsList>
 
           <TabsContent value="arena">
-            {/* Category Filter */}
-            <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
-          <Badge
-            variant={selectedCategory === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer px-4 py-2"
-            onClick={() => setSelectedCategory('all')}
-          >
-            All
-          </Badge>
-          {categoriesWithCount.map(cat => (
-            <Badge
-              key={cat.id}
-              variant={selectedCategory === cat.name ? 'default' : 'outline'}
-              className="cursor-pointer px-4 py-2 whitespace-nowrap flex items-center gap-2"
-              onClick={() => setSelectedCategory(cat.name)}
-            >
-              <span>{cat.name} ({cat.entriesCount}/10)</span>
-              <span className="text-xs opacity-75 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {getTimeRemaining(cat.expiresAt)}
-              </span>
-            </Badge>
-          ))}
-        </div>
+            {/* Category Search and Filter */}
+            <div className="space-y-4 mb-8">
+              <div className="flex gap-3 items-center">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search categories..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setAllCategoriesOpen(true)}
+                >
+                  View All Categories
+                </Button>
+              </div>
+
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                <Badge
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  className="cursor-pointer px-4 py-2"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  All
+                </Badge>
+                {categoriesWithCount
+                  .filter(cat => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                  .slice(0, 8)
+                  .map(cat => (
+                    <Badge
+                      key={cat.id}
+                      variant={selectedCategory === cat.name ? 'default' : 'outline'}
+                      className="cursor-pointer px-4 py-2 whitespace-nowrap flex items-center gap-2"
+                      onClick={() => setSelectedCategory(cat.name)}
+                    >
+                      <span>{cat.name} ({cat.entriesCount}/10)</span>
+                      <span className="text-xs opacity-75 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {getTimeRemaining(cat.expiresAt)}
+                      </span>
+                    </Badge>
+                  ))}
+                {categoriesWithCount.filter(cat => 
+                  cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                ).length > 8 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAllCategoriesOpen(true)}
+                    className="whitespace-nowrap"
+                  >
+                    +{categoriesWithCount.filter(cat => 
+                      cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                    ).length - 8} more
+                  </Button>
+                )}
+              </div>
+            </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Upload Section */}
@@ -625,6 +669,11 @@ const Arena = () => {
           clipTitle={selectedRemixClip.title}
         />
       )}
+
+      <AllCategoriesDialog
+        open={allCategoriesOpen}
+        onOpenChange={setAllCategoriesOpen}
+      />
     </div>
   );
 };
