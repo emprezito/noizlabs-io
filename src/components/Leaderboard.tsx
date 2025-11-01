@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trophy, Medal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface LeaderboardEntry {
   wallet_address: string;
@@ -13,6 +13,7 @@ interface LeaderboardEntry {
 
 export const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const navigate = useNavigate();
 
   const fetchLeaderboard = async () => {
     try {
@@ -91,11 +92,12 @@ export const Leaderboard = () => {
         <CardContent className="pt-6 pb-6 text-center">
           <h3 className="text-xl font-bold mb-2">Rack Up the Leaderboard!</h3>
           <p className="text-muted-foreground mb-4">Complete quests and earn more points to climb the ranks</p>
-          <Link to="/tasks">
-            <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all">
-              View Tasks & Quests
-            </button>
-          </Link>
+          <button 
+            onClick={() => navigate('/tasks')}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all touch-manipulation active:scale-95"
+          >
+            View Tasks & Quests
+          </button>
         </CardContent>
       </Card>
 
