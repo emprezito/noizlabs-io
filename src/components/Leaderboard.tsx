@@ -86,6 +86,19 @@ export const Leaderboard = () => {
         <p className="text-muted-foreground">Top performers on the platform</p>
       </div>
 
+      {/* Call to Action Card */}
+      <Card className="glass-strong border-primary/30 glow-primary mb-6">
+        <CardContent className="pt-6 pb-6 text-center">
+          <h3 className="text-xl font-bold mb-2">Rack Up the Leaderboard!</h3>
+          <p className="text-muted-foreground mb-4">Complete quests and earn more points to climb the ranks</p>
+          <Link to="/tasks">
+            <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all">
+              View Tasks & Quests
+            </button>
+          </Link>
+        </CardContent>
+      </Card>
+
       <div className="space-y-3">
         {leaderboard.map((entry) => (
           <Card 
