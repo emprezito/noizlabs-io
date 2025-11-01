@@ -54,6 +54,7 @@ export type Database = {
           created_at: string
           creator_wallet: string
           expires_at: string
+          genre: string | null
           id: string
           name: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           creator_wallet: string
           expires_at?: string
+          genre?: string | null
           id?: string
           name: string
         }
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           creator_wallet?: string
           expires_at?: string
+          genre?: string | null
           id?: string
           name?: string
         }
@@ -134,10 +137,14 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          personalization: boolean | null
+          preferred_genres: string[] | null
           referral_code: string
           referral_count: number | null
           referred_by: string | null
           referred_users: string[] | null
+          timezone: string | null
+          timezone_set_at: string | null
           updated_at: string
           username: string
           wallet_address: string
@@ -145,10 +152,14 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          personalization?: boolean | null
+          preferred_genres?: string[] | null
           referral_code?: string
           referral_count?: number | null
           referred_by?: string | null
           referred_users?: string[] | null
+          timezone?: string | null
+          timezone_set_at?: string | null
           updated_at?: string
           username: string
           wallet_address: string
@@ -156,10 +167,14 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          personalization?: boolean | null
+          preferred_genres?: string[] | null
           referral_code?: string
           referral_count?: number | null
           referred_by?: string | null
           referred_users?: string[] | null
+          timezone?: string | null
+          timezone_set_at?: string | null
           updated_at?: string
           username?: string
           wallet_address?: string

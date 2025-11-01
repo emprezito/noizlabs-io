@@ -39,6 +39,26 @@ const Arena = () => {
   const [selectedRemixClip, setSelectedRemixClip] = useState<{ url: string; title: string } | null>(null);
   const [categorySearch, setCategorySearch] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [preferredGenres, setPreferredGenres] = useState<string[]>([]);
+
+  // Fetch user's preferred genres
+  useEffect(() => {
+    const fetchPreferredGenres = async () => {
+      if (!walletAddress) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('preferred_genres')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+      
+      if (data?.preferred_genres && data.preferred_genres.length > 0) {
+        setPreferredGenres(data.preferred_genres);
+      }
+    };
+
+    fetchPreferredGenres();
+  }, [walletAddress]);
 
   // Update countdown every second
   useEffect(() => {
@@ -232,7 +252,28 @@ const Arena = () => {
     if (!walletAddress) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get user's timezone
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('timezone')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+      
+      const timezone = profileData?.timezone || 'UTC';
+      
+      // Get today's date in user's timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const today = `${year}-${month}-${day}`;
       
       // Get or create today's quest
       const { data: existingQuest } = await supabase
@@ -303,10 +344,19 @@ const Arena = () => {
 
   const totalVotes = audioClips.reduce((sum, clip) => sum + clip.votes, 0);
 
-  const categoriesWithCount = categories.map(cat => ({
-    ...cat,
-    entriesCount: audioClips.filter(clip => clip.categoryId === cat.id).length,
-  }));
+  const categoriesWithCount = categories
+    .filter(cat => {
+      // Filter by preferred genres if user has set preferences
+      if (preferredGenres.length > 0 && cat.genre) {
+        return preferredGenres.includes(cat.genre);
+      }
+      // Show all categories if no preferences set
+      return true;
+    })
+    .map(cat => ({
+      ...cat,
+      entriesCount: audioClips.filter(clip => clip.categoryId === cat.id).length,
+    }));
 
   const filteredCategories = categoriesWithCount.filter(cat =>
     cat.name.toLowerCase().includes(categorySearch.toLowerCase())

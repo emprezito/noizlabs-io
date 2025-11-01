@@ -5,12 +5,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { ArrowLeft, Sparkles, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { supabase } from '@/integrations/supabase/client';
+
+const AVAILABLE_GENRES = [
+  'Hip Hop/Rap',
+  'Electronic/EDM',
+  'Rock',
+  'Pop',
+  'R&B/Soul',
+  'Jazz',
+  'Classical',
+  'Country',
+  'Metal',
+  'Reggae',
+  'Latin',
+  'Blues',
+  'Folk',
+  'Indie',
+  'Ambient',
+  'Lo-fi',
+  'Afrobeats',
+  'Dancehall',
+  'House',
+  'Techno',
+];
 
 const CreateCategory = () => {
   const navigate = useNavigate();
@@ -19,11 +44,33 @@ const CreateCategory = () => {
   const { setVisible } = useWalletModal();
   const [categoryName, setCategoryName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateDailyQuest = async (wallet: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get user's timezone
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('timezone')
+        .eq('wallet_address', wallet)
+        .maybeSingle();
+      
+      const timezone = profileData?.timezone || 'UTC';
+      
+      // Get today's date in user's timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const today = `${year}-${month}-${day}`;
       
       // Get or create today's quest
       const { data: existingQuest } = await supabase
@@ -72,6 +119,11 @@ const CreateCategory = () => {
       return;
     }
 
+    if (!selectedGenre) {
+      toast.error('Please select a genre');
+      return;
+    }
+
     // Check if category already exists
     if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase())) {
       toast.error('Category already exists');
@@ -105,6 +157,7 @@ const CreateCategory = () => {
         .insert({
           name: categoryName,
           creator_wallet: walletAddress,
+          genre: selectedGenre,
         });
 
       if (error) throw error;
@@ -209,8 +262,9 @@ const CreateCategory = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category Name</label>
+              <Label htmlFor="categoryName">Category Name</Label>
               <Input
+                id="categoryName"
                 placeholder="e.g., Movie Quotes, Audio Memes, Voiceovers..."
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
@@ -218,8 +272,25 @@ const CreateCategory = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Description (Optional)</label>
+              <Label htmlFor="genre">Genre</Label>
+              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                <SelectTrigger id="genre">
+                  <SelectValue placeholder="Select a genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_GENRES.map((genre) => (
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
+                id="description"
                 placeholder="Describe what kind of audio clips belong in this category..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

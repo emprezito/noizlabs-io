@@ -18,6 +18,7 @@ interface Category {
   name: string;
   creatorWallet: string;
   expiresAt: string;
+  genre?: string;
 }
 
 interface Profile {
@@ -68,6 +69,7 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: cat.name,
         creatorWallet: cat.creator_wallet,
         expiresAt: cat.expires_at,
+        genre: cat.genre,
       }));
 
       setCategories(formattedCategories);

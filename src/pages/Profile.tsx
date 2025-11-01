@@ -204,7 +204,29 @@ export default function Profile() {
     if (!walletAddress) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get user's timezone
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('timezone')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+      
+      const timezone = profileData?.timezone || 'UTC';
+      
+      // Get today's date in user's timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const today = `${year}-${month}-${day}`;
+
       const { data, error } = await supabase
         .from('daily_quests')
         .select('*')
@@ -256,7 +278,28 @@ export default function Profile() {
     if (!walletAddress || hasCheckedInToday) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get user's timezone
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('timezone')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+      
+      const timezone = profileData?.timezone || 'UTC';
+      
+      // Get today's date in user's timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const today = `${year}-${month}-${day}`;
       
       const { data: lastCheckIn } = await supabase
         .from('daily_check_ins')
