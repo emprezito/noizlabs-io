@@ -395,7 +395,7 @@ const Arena = () => {
             <CardContent className="pt-6">
               <Button 
                 variant="glow" 
-                className="w-full h-full"
+                className="w-full h-full touch-manipulation active:scale-95"
                 onClick={() => {
                   if (requireWallet()) navigate('/create-category');
                 }}
@@ -562,7 +562,7 @@ const Arena = () => {
                       <Sparkles className="w-3 h-3 mr-1" />
                       Earn 10 Points
                     </Badge>
-                    <Button variant="glow" className="w-full" onClick={handleUpload}>
+                    <Button variant="glow" className="w-full touch-manipulation active:scale-95" onClick={handleUpload}>
                       <Zap className="w-4 h-4 mr-2" />
                       Upload Free
                     </Button>
@@ -650,36 +650,36 @@ const Arena = () => {
                                      <div className="h-0.5 bg-muted rounded-full w-full" />
                                    )}
 
-                                   {/* Compact Action Row */}
-                                   <div className="flex gap-1.5 items-center pt-0.5">
-                                     <Button
-                                       variant={hasVoted ? "outline" : "default"}
-                                       size="sm"
-                                       className="flex-1 h-8 md:h-9 text-[11px] md:text-xs font-semibold bg-primary hover:bg-primary/90"
-                                       disabled={hasVoted}
-                                       onClick={() => handleVote(battle.id, meme.id)}
-                                     >
-                                       {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
-                                     </Button>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       className="h-8 w-8 md:h-9 md:w-9 p-0 hover:bg-primary/10"
-                                       onClick={() => handleShare(meme.id, meme.title)}
-                                     >
-                                       <Share2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                     </Button>
-                                     {meme.audioUrl && (
-                                       <Button
-                                         variant="ghost"
-                                         size="sm"
-                                         className="h-8 w-8 md:h-9 md:w-9 p-0 hover:bg-primary/10"
-                                         onClick={() => handleRemix(meme.audioUrl, meme.title)}
-                                       >
-                                         <Music className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                       </Button>
-                                     )}
-                                   </div>
+                                    {/* Compact Action Row */}
+                                    <div className="flex gap-1.5 items-center pt-0.5">
+                                      <Button
+                                        variant={hasVoted ? "outline" : "default"}
+                                        size="sm"
+                                        className="flex-1 h-8 md:h-9 text-[11px] md:text-xs font-semibold bg-primary hover:bg-primary/90 touch-manipulation active:scale-95"
+                                        disabled={hasVoted}
+                                        onClick={() => handleVote(battle.id, meme.id)}
+                                      >
+                                        {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 md:h-9 md:w-9 p-0 hover:bg-primary/10 touch-manipulation active:scale-90"
+                                        onClick={() => handleShare(meme.id, meme.title)}
+                                      >
+                                        <Share2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                      </Button>
+                                      {meme.audioUrl && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 md:h-9 md:w-9 p-0 hover:bg-primary/10 touch-manipulation active:scale-90"
+                                          onClick={() => handleRemix(meme.audioUrl, meme.title)}
+                                        >
+                                          <Music className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                        </Button>
+                                      )}
+                                    </div>
 
                                    {/* Vote Count and Time Remaining */}
                                    <div className="flex items-center justify-between text-[9px] md:text-[10px] text-muted-foreground pt-0.5">

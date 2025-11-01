@@ -69,7 +69,7 @@ export const Navbar = () => {
               </Link>
 
               {/* Wallet Address (center) */}
-              <Button variant="ghost" size="sm" onClick={handleWalletClick} className="text-xs px-2">
+              <Button variant="ghost" size="sm" onClick={handleWalletClick} className="text-xs px-2 touch-manipulation active:scale-95">
                 <Wallet className="w-3 h-3 mr-1" />
                 {isConnected 
                   ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
@@ -80,7 +80,7 @@ export const Navbar = () => {
               {isConnected && (
                 <Badge 
                   variant="outline" 
-                  className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs flex items-center gap-1"
+                  className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs flex items-center gap-1 touch-manipulation active:scale-95"
                   onClick={handlePointsClick}
                 >
                   <Sparkles className="w-3 h-3" />
@@ -133,7 +133,7 @@ export const Navbar = () => {
             {isConnected && (
               <Badge 
                 variant="outline" 
-                className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2"
+                className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2 touch-manipulation active:scale-95"
                 onClick={handlePointsClick}
               >
                 <Sparkles className="w-3 h-3" />
@@ -141,7 +141,7 @@ export const Navbar = () => {
                 <User className="w-4 h-4" />
               </Badge>
             )}
-            <Button variant="neon" size="sm" onClick={handleWalletClick}>
+            <Button variant="neon" size="sm" onClick={handleWalletClick} className="touch-manipulation active:scale-95">
               <Wallet className="w-4 h-4 mr-2" />
               {isConnected 
                 ? `${walletAddress?.slice(0, 4)}...${walletAddress?.slice(-4)}` 
