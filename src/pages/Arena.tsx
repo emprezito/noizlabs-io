@@ -603,19 +603,10 @@ const Arena = () => {
                        </CardHeader>
                        <CardContent>
                            {/* 1v1 Battle Layout */}
-                           <div className="grid grid-cols-2 gap-4 md:gap-6">
-                             {battle.contestants.map((meme, idx) => (
-                               <div key={meme.id} className="relative">
-                                 {/* VS Badge in the middle (only show on first clip) */}
-                                 {idx === 0 && (
-                                   <div className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-10">
-                                     <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.6)] border-2 border-background">
-                                       <span className="text-xs md:text-sm font-bold text-white">VS</span>
-                                     </div>
-                                   </div>
-                                 )}
-                                 
-                                 <Card 
+                            <div className="grid grid-cols-2 gap-4 md:gap-6">
+                              {battle.contestants.map((meme) => (
+                                <div key={meme.id} className="relative">
+                                  <Card
                                    className="glass border-border/50 transition-all hover:border-primary/70 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:scale-[1.02] group h-full"
                                  >
                                    <CardContent className="p-3 md:p-4 space-y-2.5 md:space-y-3">
