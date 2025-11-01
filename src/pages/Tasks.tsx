@@ -53,26 +53,6 @@ const Tasks = () => {
   const [dailyQuest, setDailyQuest] = useState<DailyQuest>({ categories_created: 0, clips_uploaded: 0, votes_cast: 0 });
   const [referrals, setReferrals] = useState<Referral[]>([]);
 
-  // Redirect to profile on mobile
-  useEffect(() => {
-    const checkMobileAndRedirect = async () => {
-      const isMobile = window.innerWidth < 768;
-      if (isMobile && isConnected && walletAddress) {
-        // Fetch username and redirect to profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('wallet_address', walletAddress)
-          .single();
-        
-        if (profileData?.username) {
-          navigate(`/profile/${profileData.username}`);
-        }
-      }
-    };
-    
-    checkMobileAndRedirect();
-  }, [isConnected, walletAddress, navigate]);
 
   useEffect(() => {
     fetchTasks();
