@@ -43,10 +43,15 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [categories, setCategories] = useState<Category[]>([]);
   const [userPoints, setUserPoints] = useState<number>(0);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch data from database
   const refreshData = async () => {
     try {
+      // Check if Supabase is properly configured
+      if (!supabase) {
+        throw new Error('Backend not configured');
+      }
       // Fetch profiles
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -99,8 +104,9 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       );
 
       setAudioClips(clipsWithVotes);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      setError(error?.message || 'Failed to connect to backend');
     }
   };
 
@@ -196,6 +202,23 @@ export const ArenaProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     fetchUserPoints,
     getOrCreateProfile,
   };
+
+  // If there's a critical error, show error UI
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="glass-strong rounded-2xl p-8 max-w-md text-center">
+          <h2 className="text-2xl font-bold text-destructive mb-4">Configuration Error</h2>
+          <p className="text-muted-foreground mb-6">
+            The backend connection is not properly configured. Please make sure your Supabase project is connected.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Error: {error}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return <ArenaContext.Provider value={value}>{children}</ArenaContext.Provider>;
 };
