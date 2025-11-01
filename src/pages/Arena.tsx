@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock, Music } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Upload, Play, Trophy, Users, Sparkles, FolderPlus, Zap, Share2, Clock, Music, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Link } from 'react-router-dom';
 import { useArena } from '@/contexts/ArenaContext';
@@ -36,6 +37,8 @@ const Arena = () => {
   const [, setTick] = useState(0);
   const [remixDialogOpen, setRemixDialogOpen] = useState(false);
   const [selectedRemixClip, setSelectedRemixClip] = useState<{ url: string; title: string } | null>(null);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Update countdown every second
   useEffect(() => {
@@ -129,14 +132,7 @@ const Arena = () => {
       return;
     }
 
-    const categoryClipsCount = audioClips.filter(
-      clip => clip.categoryId === selectedUploadCategory
-    ).length;
-    
-    if (categoryClipsCount >= 10) {
-      toast.error('This category has reached maximum entries (10)');
-      return;
-    }
+    // Remove 10 clip limit - now unlimited
 
     try {
       // Upload audio file to storage
@@ -250,6 +246,13 @@ const Arena = () => {
     entriesCount: audioClips.filter(clip => clip.categoryId === cat.id).length,
   }));
 
+  const filteredCategories = categoriesWithCount.filter(cat =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const displayedCategories = categorySearch ? filteredCategories : categoriesWithCount.slice(0, 5);
+  const hasMoreCategories = categoriesWithCount.length > 5;
+
   const getTimeRemaining = (expiresAt: string) => {
     const now = new Date().getTime();
     const expiry = new Date(expiresAt).getTime();
@@ -344,29 +347,100 @@ const Arena = () => {
 
           <TabsContent value="arena">
             {/* Category Filter */}
-            <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
-          <Badge
-            variant={selectedCategory === 'all' ? 'default' : 'outline'}
-            className="cursor-pointer px-4 py-2"
-            onClick={() => setSelectedCategory('all')}
-          >
-            All
-          </Badge>
-          {categoriesWithCount.map(cat => (
-            <Badge
-              key={cat.id}
-              variant={selectedCategory === cat.name ? 'default' : 'outline'}
-              className="cursor-pointer px-4 py-2 whitespace-nowrap flex items-center gap-2"
-              onClick={() => setSelectedCategory(cat.name)}
-            >
-              <span>{cat.name} ({cat.entriesCount}/10)</span>
-              <span className="text-xs opacity-75 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {getTimeRemaining(cat.expiresAt)}
-              </span>
-            </Badge>
-          ))}
-        </div>
+            <div className="mb-8 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search categories..."
+                  value={categorySearch}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Category Badges */}
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                <Badge
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  className="cursor-pointer px-4 py-2"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  All
+                </Badge>
+                {displayedCategories.map(cat => (
+                  <Badge
+                    key={cat.id}
+                    variant={selectedCategory === cat.name ? 'default' : 'outline'}
+                    className="cursor-pointer px-4 py-2 whitespace-nowrap flex items-center gap-2"
+                    onClick={() => setSelectedCategory(cat.name)}
+                  >
+                    <span>{cat.name} ({cat.entriesCount})</span>
+                    <span className="text-xs opacity-75 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {getTimeRemaining(cat.expiresAt)}
+                    </span>
+                  </Badge>
+                ))}
+                {hasMoreCategories && !categorySearch && (
+                  <Dialog open={showAllCategories} onOpenChange={setShowAllCategories}>
+                    <DialogTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer px-4 py-2 whitespace-nowrap border-primary text-primary hover:bg-primary/10"
+                      >
+                        <Filter className="w-3 h-3 mr-1" />
+                        More ({categoriesWithCount.length - 5})
+                      </Badge>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>All Categories</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search categories..."
+                            value={categorySearch}
+                            onChange={(e) => setCategorySearch(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {filteredCategories.map(cat => (
+                            <Card
+                              key={cat.id}
+                              className={`cursor-pointer transition-all hover:border-primary ${
+                                selectedCategory === cat.name ? 'border-primary bg-primary/5' : 'glass'
+                              }`}
+                              onClick={() => {
+                                setSelectedCategory(cat.name);
+                                setShowAllCategories(false);
+                                setCategorySearch('');
+                              }}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-semibold">{cat.name}</h4>
+                                  <Badge variant="outline" className="text-xs">
+                                    {cat.entriesCount} clips
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="w-3 h-3" />
+                                  {getTimeRemaining(cat.expiresAt)}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Upload Section */}
@@ -411,7 +485,7 @@ const Arena = () => {
                       <option value="">Select Category</option>
                       {categoriesWithCount.map(cat => (
                         <option key={cat.id} value={cat.id}>
-                          {cat.name} ({cat.entriesCount}/10)
+                          {cat.name} ({cat.entriesCount})
                         </option>
                       ))}
                     </select>
@@ -432,10 +506,10 @@ const Arena = () => {
                     <p>• Connect your Solana wallet</p>
                     <p>• Upload audio clips for free</p>
                     <p>• Earn 10 points per upload</p>
-                    <p>• Max 10 entries per category</p>
+                    <p>• Unlimited entries per category</p>
                     <p>• Vote to earn 5 points</p>
                     <p>• Share clips to get votes</p>
-                    <p>• Top clip wins 25 points after 24h</p>
+                    <p>• Top clip wins 25 points after 7 days</p>
                   </div>
                 </div>
               </CardContent>

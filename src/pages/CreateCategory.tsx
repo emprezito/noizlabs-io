@@ -157,7 +157,7 @@ const CreateCategory = () => {
               </div>
               <div>
                 <CardTitle>Create New Category</CardTitle>
-                <CardDescription>Define a new audio clip category (24hr duration)</CardDescription>
+                <CardDescription>Define a new audio clip category (7 day duration)</CardDescription>
               </div>
             </div>
             <Badge variant="outline" className="border-primary text-primary w-fit">
@@ -188,8 +188,8 @@ const CreateCategory = () => {
             <div className="glass rounded-lg p-4">
               <h4 className="font-semibold mb-3">Category Rules</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>• Category lasts for 24 hours</p>
-                <p>• Maximum 10 audio entries per category</p>
+                <p>• Category lasts for 7 days</p>
+                <p>• Unlimited audio entries per category</p>
                 <p>• All clips compete in 1v1 battles</p>
                 <p>• Community votes determine winners</p>
                 <p>• Top voted clip wins 25 points after expiry</p>

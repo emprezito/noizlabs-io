@@ -3,11 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks } from 'lucide-react';
+import { Wallet, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Radio } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { useIsMobile } from '@/hooks/use-mobile';
-import waveformLogo from '@/assets/waveform-logo.jpg';
 
 export const Navbar = () => {
   const { userPoints, fetchUserPoints, profiles } = useArena();
@@ -66,7 +65,7 @@ export const Navbar = () => {
             <div className="flex items-center justify-between h-14">
               {/* Logo */}
               <Link to="/" className="flex items-center gap-2">
-                <img src={waveformLogo} alt="NoizLabs" className="h-6 w-auto object-contain" />
+                <Radio className="w-6 h-6 text-primary" />
               </Link>
 
               {/* Wallet Address (center) */}
@@ -117,7 +116,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
-            <img src={waveformLogo} alt="NoizLabs" className="h-10 w-auto object-contain" />
+            <Radio className="w-10 h-10 text-primary" />
             <span className="text-2xl font-bold text-gradient">NoizLabs</span>
           </Link>
 
