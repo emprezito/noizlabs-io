@@ -20,7 +20,7 @@ interface Battle {
   id: string;
   category: string;
   categoryId: string;
-  contestants: [any, any];
+  contestants: any[]; // Array of 4 clips
 }
 
 const Arena = () => {
@@ -58,15 +58,20 @@ const Arena = () => {
     
     categories.forEach(category => {
       const categoryClips = audioClips.filter(clip => clip.category === category.name);
-      if (categoryClips.length >= 2) {
-        // Create battles for all pairs
-        for (let i = 0; i < categoryClips.length; i += 2) {
-          if (i + 1 < categoryClips.length) {
+      if (categoryClips.length >= 4) {
+        // Create battles with 4 clips each
+        for (let i = 0; i < categoryClips.length; i += 4) {
+          if (i + 3 < categoryClips.length) {
             newBattles.push({
               id: `${category.name}-${i}`,
               category: category.name,
               categoryId: category.id,
-              contestants: [categoryClips[i], categoryClips[i + 1]]
+              contestants: [
+                categoryClips[i], 
+                categoryClips[i + 1],
+                categoryClips[i + 2],
+                categoryClips[i + 3]
+              ]
             });
           }
         }
@@ -588,100 +593,112 @@ const Arena = () => {
                   const hasVoted = votedBattles.has(battle.id);
                   const category = categories.find(c => c.id === battle.categoryId);
                   return (
-                    <Card key={battle.id} className="glass-strong border-border">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">1v1 Battle</CardTitle>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="border-accent text-accent flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {category && getTimeRemaining(category.expiresAt)}
-                            </Badge>
-                            <Badge variant="outline" className="border-primary text-primary">
-                              {battle.category}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {battle.contestants.map((meme) => (
-                            <Card 
-                              key={meme.id}
-                              className="glass border-border transition-all hover:border-primary"
-                            >
-                              <CardContent className="pt-6 space-y-4">
-                                <div className="text-center">
-                                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                                    <Play className="w-6 h-6 text-white" />
-                                  </div>
-                                  <h3 className="text-lg font-bold mb-1">{meme.title}</h3>
-                                  {meme.creatorUsername ? (
-                                    <p className="text-xs text-muted-foreground mb-1">
-                                      @{meme.creatorUsername}
-                                    </p>
-                                  ) : (
-                                    <p className="text-xs text-muted-foreground mb-1">
-                                      {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}
-                                    </p>
-                                  )}
-                                  <p className="text-sm text-primary font-semibold">{meme.votes} votes</p>
-                                </div>
+                     <Card key={battle.id} className="glass-strong border-border">
+                       <CardHeader className="pb-3">
+                         <div className="flex items-center justify-between">
+                           <CardTitle className="text-base">Battle Arena</CardTitle>
+                           <div className="flex items-center gap-2">
+                             <Badge variant="outline" className="border-accent text-accent flex items-center gap-1 text-xs px-2 py-0.5">
+                               <Clock className="w-3 h-3" />
+                               {category && getTimeRemaining(category.expiresAt)}
+                             </Badge>
+                             <Badge variant="outline" className="border-primary text-primary text-xs px-2 py-0.5">
+                               {battle.category}
+                             </Badge>
+                           </div>
+                         </div>
+                       </CardHeader>
+                       <CardContent>
+                         {/* 2x2 Grid Layout - 4 clips */}
+                         <div className="grid grid-cols-2 gap-3">
+                           {battle.contestants.map((meme) => (
+                             <Card 
+                               key={meme.id}
+                               className="glass border-border transition-all hover:border-primary hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02] group"
+                             >
+                               <CardContent className="p-4 space-y-2">
+                                 {/* Circular Play Button */}
+                                 <div className="flex justify-center">
+                                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all">
+                                     <Play className="w-5 h-5 text-white fill-white" />
+                                   </div>
+                                 </div>
 
-                                {meme.audioUrl ? (
-                                  <div className="mb-3">
-                                    <AudioPlayer audioUrl={meme.audioUrl} title={meme.title} />
-                                  </div>
-                                ) : (
-                                  <div className="mb-3 glass rounded-lg p-3 text-center">
-                                    <p className="text-xs text-muted-foreground">No audio available</p>
-                                  </div>
-                                )}
+                                 {/* Title and Username */}
+                                 <div className="text-center space-y-0.5">
+                                   <h3 className="text-sm font-bold line-clamp-1">{meme.title}</h3>
+                                   {meme.creatorUsername ? (
+                                     <p className="text-xs text-muted-foreground">
+                                       @{meme.creatorUsername}
+                                     </p>
+                                   ) : (
+                                     <p className="text-xs text-muted-foreground">
+                                       {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}
+                                     </p>
+                                   )}
+                                 </div>
 
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant={hasVoted ? "outline" : "glow"}
-                                    size="sm"
-                                    className="flex-1"
-                                    disabled={hasVoted}
-                                    onClick={() => handleVote(battle.id, meme.id)}
-                                  >
-                                    {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleShare(meme.id, meme.title)}
-                                  >
-                                    <Share2 className="w-4 h-4" />
-                                  </Button>
-                                  {meme.audioUrl && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleRemix(meme.audioUrl, meme.title)}
-                                    >
-                                      <Music className="w-4 h-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                                 {/* Thin Progress Bar / Audio Player */}
+                                 {meme.audioUrl ? (
+                                   <div className="py-1">
+                                     <AudioPlayer audioUrl={meme.audioUrl} title={meme.title} />
+                                   </div>
+                                 ) : (
+                                   <div className="h-1 bg-muted rounded-full w-full" />
+                                 )}
+
+                                 {/* Compact Vote Count */}
+                                 <div className="text-center">
+                                   <p className="text-xs text-primary font-semibold">{meme.votes} votes</p>
+                                 </div>
+
+                                 {/* Compact Action Row */}
+                                 <div className="flex gap-1.5 pt-1">
+                                   <Button
+                                     variant={hasVoted ? "outline" : "glow"}
+                                     size="sm"
+                                     className="flex-1 h-8 text-xs px-2"
+                                     disabled={hasVoted}
+                                     onClick={() => handleVote(battle.id, meme.id)}
+                                   >
+                                     {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
+                                   </Button>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     className="h-8 w-8 p-0"
+                                     onClick={() => handleShare(meme.id, meme.title)}
+                                   >
+                                     <Share2 className="w-3.5 h-3.5" />
+                                   </Button>
+                                   {meme.audioUrl && (
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       className="h-8 w-8 p-0"
+                                       onClick={() => handleRemix(meme.audioUrl, meme.title)}
+                                     >
+                                       <Music className="w-3.5 h-3.5" />
+                                     </Button>
+                                   )}
+                                 </div>
+                               </CardContent>
+                             </Card>
+                           ))}
+                         </div>
+                       </CardContent>
+                     </Card>
+                   );
+                 })
               ) : (
                 <Card className="glass-strong border-border">
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      {selectedCategory === 'all' 
-                        ? 'No battles yet. Upload some audio clips to get started!' 
-                        : 'No battles in this category yet. Need at least 2 clips.'}
-                    </p>
-                  </CardContent>
+                   <CardContent className="py-12 text-center">
+                     <p className="text-muted-foreground">
+                       {selectedCategory === 'all' 
+                         ? 'No battles yet. Upload some audio clips to get started!' 
+                         : 'No battles in this category yet. Need at least 4 clips.'}
+                     </p>
+                   </CardContent>
                 </Card>
               )}
             </div>
