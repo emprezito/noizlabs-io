@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Volume2 } from 'lucide-react';
+import { Play, Pause, Volume2 } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
-import { AudioPlayer } from '@/components/AudioPlayer';
 import { useNavigate } from 'react-router-dom';
 
 const Marketplace = () => {
   const { audioClips } = useArena();
   const navigate = useNavigate();
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
 
   // Get top 5 clips by votes
   const top5Clips = [...audioClips]
@@ -18,7 +18,20 @@ const Marketplace = () => {
     .slice(0, 5);
 
   const handlePlayPause = (clipId: string) => {
-    setPlayingClipId(playingClipId === clipId ? null : clipId);
+    const audio = audioRefs.current[clipId];
+    if (!audio) return;
+
+    if (playingClipId === clipId) {
+      audio.pause();
+      setPlayingClipId(null);
+    } else {
+      // Pause any currently playing audio
+      if (playingClipId && audioRefs.current[playingClipId]) {
+        audioRefs.current[playingClipId].pause();
+      }
+      audio.play();
+      setPlayingClipId(clipId);
+    }
   };
 
   const megaphoneColors = [
@@ -106,30 +119,30 @@ const Marketplace = () => {
                   <div className="flex justify-center">
                     <Button
                       size="lg"
-                      className="w-16 h-16 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg"
+                      className="w-16 h-16 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg transition-transform hover:scale-110"
                       onClick={() => handlePlayPause(clip.id)}
                     >
-                      <Play className="w-6 h-6 fill-white" />
+                      {playingClipId === clip.id ? (
+                        <Pause className="w-6 h-6" />
+                      ) : (
+                        <Play className="w-6 h-6 fill-white" />
+                      )}
                     </Button>
                   </div>
 
-                  {/* Audio Player (hidden) */}
-                  {clip.audioUrl && playingClipId === clip.id && (
-                    <div className="hidden">
-                      <AudioPlayer audioUrl={clip.audioUrl} />
-                    </div>
+                  {/* Hidden Audio Element */}
+                  {clip.audioUrl && (
+                    <audio
+                      ref={(el) => {
+                        if (el) audioRefs.current[clip.id] = el;
+                      }}
+                      src={clip.audioUrl}
+                      onEnded={() => setPlayingClipId(null)}
+                    />
                   )}
 
                   {/* Stats */}
                   <div className="space-y-2 text-sm text-center pt-4 border-t border-border/50">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Market Cap</span>
-                      <span className="font-semibold">${(Math.random() * 20000 + 4000).toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Price</span>
-                      <span className="font-semibold">${(Math.random() * 0.5).toFixed(4)}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Votes</span>
                       <span className="font-semibold">{clip.votes}</span>
