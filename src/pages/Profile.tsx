@@ -471,136 +471,136 @@ export default function Profile() {
 
           {isOwnProfile && (
             <TabsContent value="tasks">
-              <div className="max-w-4xl mx-auto space-y-6">
+              <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
                 {/* Daily Streak Check-in */}
-                <Card className="glass-strong p-6 border-primary/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Flame className="w-6 h-6 text-primary" />
-                    <h3 className="text-xl font-bold">Daily Streak</h3>
+                <Card className="glass-strong p-4 md:p-6 border-primary/20">
+                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                    <Flame className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    <h3 className="text-lg md:text-xl font-bold">Daily Streak</h3>
                   </div>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Check in daily to maintain your streak. Reach 7 days for 100 bonus points!
                   </p>
-                  <div className="mb-4">
+                  <div className="mb-3 md:mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Progress to 7 days</span>
-                      <span className="text-sm font-bold text-primary">{streakCount}/7 days</span>
+                      <span className="text-xs md:text-sm text-muted-foreground">Progress to 7 days</span>
+                      <span className="text-xs md:text-sm font-bold text-primary">{streakCount}/7 days</span>
                     </div>
-                    <Progress value={(streakCount / 7) * 100} className="h-3" />
+                    <Progress value={(streakCount / 7) * 100} className="h-2 md:h-3" />
                   </div>
                   <Button 
                     onClick={handleCheckIn}
                     disabled={hasCheckedInToday}
-                    className="w-full gap-2"
+                    className="w-full gap-2 h-10 md:h-11"
                   >
                     {hasCheckedInToday ? (
                       <>
-                        <Check className="w-4 h-4" />
-                        Checked in today
+                        <Check className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <span className="text-sm md:text-base">Checked in today</span>
                       </>
                     ) : (
                       <>
-                        <Flame className="w-4 h-4" />
-                        Check in now
+                        <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <span className="text-sm md:text-base">Check in now</span>
                       </>
                     )}
                   </Button>
                 </Card>
 
                 {/* Daily Quests */}
-                <Card className="glass-strong p-6 border-primary/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Target className="w-6 h-6 text-primary" />
-                    <h3 className="text-xl font-bold">Daily Quests</h3>
+                <Card className="glass-strong p-4 md:p-6 border-primary/20">
+                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                    <Target className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    <h3 className="text-lg md:text-xl font-bold">Daily Quests</h3>
                   </div>
-                  <p className="text-muted-foreground mb-6">
+                  <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
                     Complete daily activities to earn points. Resets at midnight.
                   </p>
                   
-                  <div className="space-y-4">
-                    <div className="p-4 bg-background/50 rounded-lg">
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="p-3 md:p-4 bg-background/50 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">Create a Category</span>
-                        <span className="text-primary font-bold">
+                        <span className="text-sm md:text-base font-medium">Create a Category</span>
+                        <span className="text-primary font-bold text-sm md:text-base">
                           {dailyQuest.categories_created >= 1 ? (
                             <span className="flex items-center gap-1">
-                              <Check className="w-4 h-4" />
-                              +10 points
+                              <Check className="w-3 h-3 md:w-4 md:h-4" />
+                              <span className="text-xs md:text-sm">+10 pts</span>
                             </span>
                           ) : (
-                            '+10 points'
+                            <span className="text-xs md:text-sm">+10 pts</span>
                           )}
                         </span>
                       </div>
-                      <Progress value={dailyQuest.categories_created >= 1 ? 100 : 0} className="h-2" />
+                      <Progress value={dailyQuest.categories_created >= 1 ? 100 : 0} className="h-1.5 md:h-2" />
                     </div>
 
-                    <div className="p-4 bg-background/50 rounded-lg">
+                    <div className="p-3 md:p-4 bg-background/50 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">Upload 5 Audio Clips</span>
-                        <span className="text-primary font-bold">
+                        <span className="text-sm md:text-base font-medium">Upload 5 Audio Clips</span>
+                        <span className="text-primary font-bold text-sm md:text-base">
                           {dailyQuest.clips_uploaded >= 5 ? (
                             <span className="flex items-center gap-1">
-                              <Check className="w-4 h-4" />
-                              +10 points
+                              <Check className="w-3 h-3 md:w-4 md:h-4" />
+                              <span className="text-xs md:text-sm">+10 pts</span>
                             </span>
                           ) : (
-                            '+10 points'
+                            <span className="text-xs md:text-sm">+10 pts</span>
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center mb-1">
-                        <Progress value={(dailyQuest.clips_uploaded / 5) * 100} className="h-2 flex-1 mr-2" />
-                        <span className="text-xs text-muted-foreground">{dailyQuest.clips_uploaded}/5</span>
+                      <div className="flex justify-between items-center gap-2 mb-1">
+                        <Progress value={(dailyQuest.clips_uploaded / 5) * 100} className="h-1.5 md:h-2 flex-1" />
+                        <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">{dailyQuest.clips_uploaded}/5</span>
                       </div>
                     </div>
 
-                    <div className="p-4 bg-background/50 rounded-lg">
+                    <div className="p-3 md:p-4 bg-background/50 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">Vote on 20 Audio Clips</span>
-                        <span className="text-primary font-bold">
+                        <span className="text-sm md:text-base font-medium">Vote on 20 Audio Clips</span>
+                        <span className="text-primary font-bold text-sm md:text-base">
                           {dailyQuest.votes_cast >= 20 ? (
                             <span className="flex items-center gap-1">
-                              <Check className="w-4 h-4" />
-                              +10 points
+                              <Check className="w-3 h-3 md:w-4 md:h-4" />
+                              <span className="text-xs md:text-sm">+10 pts</span>
                             </span>
                           ) : (
-                            '+10 points'
+                            <span className="text-xs md:text-sm">+10 pts</span>
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center mb-1">
-                        <Progress value={(dailyQuest.votes_cast / 20) * 100} className="h-2 flex-1 mr-2" />
-                        <span className="text-xs text-muted-foreground">{dailyQuest.votes_cast}/20</span>
+                      <div className="flex justify-between items-center gap-2 mb-1">
+                        <Progress value={(dailyQuest.votes_cast / 20) * 100} className="h-1.5 md:h-2 flex-1" />
+                        <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">{dailyQuest.votes_cast}/20</span>
                       </div>
                     </div>
                   </div>
                 </Card>
 
                 {/* Referral Stats */}
-                <Card className="glass-strong p-6 border-primary/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Users className="w-6 h-6 text-primary" />
-                    <h3 className="text-xl font-bold">Your Referrals</h3>
+                <Card className="glass-strong p-4 md:p-6 border-primary/20">
+                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    <h3 className="text-lg md:text-xl font-bold">Your Referrals</h3>
                   </div>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     {referrals.length} {referrals.length === 1 ? 'person has' : 'people have'} used your referral code
                   </p>
                   {referrals.length > 0 && (
                     <div className="space-y-2">
                       {referrals.map((referral, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-3 bg-background/50 rounded-lg">
-                          <Check className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{referral.username}</span>
+                        <div key={idx} className="flex items-center gap-2 p-2.5 md:p-3 bg-background/50 rounded-lg">
+                          <Check className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
+                          <span className="text-sm md:text-base font-medium">{referral.username}</span>
                         </div>
                       ))}
                     </div>
                   )}
                 </Card>
 
-                <Card className="glass-strong p-6 border-primary/20">
-                  <h3 className="text-xl font-bold mb-4">Redeem Referral Code</h3>
-                  <p className="text-muted-foreground mb-4">
+                <Card className="glass-strong p-4 md:p-6 border-primary/20">
+                  <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4">Redeem Referral Code</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                     Enter a referral code, then create your first category to earn 100 points for you and your referrer!
                   </p>
                   <div className="flex gap-2">
@@ -609,10 +609,11 @@ export default function Profile() {
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value)}
                       placeholder="Enter referral code"
-                      className="flex-1 px-4 py-2 rounded-lg glass border border-border focus:border-primary focus:outline-none"
+                      className="flex-1 px-3 md:px-4 py-2 text-sm md:text-base rounded-lg glass border border-border focus:border-primary focus:outline-none"
                       maxLength={8}
                     />
-                    <Button 
+                    <Button
+                      className="h-10 md:h-11 text-sm md:text-base"
                       onClick={async () => {
                         if (!referralCode.trim()) {
                           toast.error("Please enter a referral code");
@@ -668,7 +669,7 @@ export default function Profile() {
                   </div>
                 </Card>
 
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {tasks.map((task) => {
                     const completed = isTaskCompleted(task.id);
                     const isReferral = task.task_type === 'referral';
@@ -676,32 +677,32 @@ export default function Profile() {
                     return (
                       <Card
                         key={task.id}
-                        className={`glass p-6 border transition-all ${
+                        className={`glass p-4 md:p-6 border transition-all ${
                           completed
                             ? 'border-primary/50 glow-primary'
                             : 'border-border hover:border-primary/30'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-xl font-bold">{task.name}</h3>
+                        <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-4">
+                          <div className="flex-1 w-full">
+                            <div className="flex items-center gap-2 md:gap-3 mb-2">
+                              <h3 className="text-base md:text-xl font-bold">{task.name}</h3>
                               {completed && (
-                                <div className="flex items-center gap-1 text-primary text-sm">
-                                  <Check className="w-4 h-4" />
+                                <div className="flex items-center gap-1 text-primary text-xs md:text-sm">
+                                  <Check className="w-3 h-3 md:w-4 md:h-4" />
                                   <span>Completed</span>
                                 </div>
                               )}
                             </div>
-                            <p className="text-muted-foreground mb-4">
+                            <p className="text-sm md:text-base text-muted-foreground mb-3 md:mb-4">
                               {task.description}
                             </p>
                             <div className="flex items-center gap-2">
-                              <span className="text-primary font-bold text-lg">
+                              <span className="text-primary font-bold text-base md:text-lg">
                                 +{task.points_reward} points
                               </span>
                               {isReferral && (
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-xs md:text-sm text-muted-foreground">
                                   (per referral)
                                 </span>
                               )}
@@ -712,18 +713,18 @@ export default function Profile() {
                             <Button
                               onClick={() => handleCompleteTask(task)}
                               disabled={isReferral}
-                              className="gap-2"
+                              className="gap-2 w-full md:w-auto h-10 md:h-11 text-sm md:text-base"
                               variant={isReferral ? "outline" : "default"}
                             >
                               {isReferral ? (
                                 <>
-                                  <Clock className="w-4 h-4" />
+                                  <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                   Auto-tracked
                                 </>
                               ) : (
                                 <>
                                   Complete
-                                  <ExternalLink className="w-4 h-4" />
+                                  <ExternalLink className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </>
                               )}
                             </Button>
@@ -731,8 +732,8 @@ export default function Profile() {
                         </div>
 
                         {isReferral && (
-                          <div className="mt-4 p-4 bg-background/50 rounded-lg">
-                            <p className="text-sm text-muted-foreground">
+                          <div className="mt-3 md:mt-4 p-3 md:p-4 bg-background/50 rounded-lg">
+                            <p className="text-xs md:text-sm text-muted-foreground">
                               Share your referral code: <strong>{profile.referral_code}</strong>. When referred users redeem your code after creating a category, you'll both earn 100 points!
                             </p>
                           </div>
