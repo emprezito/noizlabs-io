@@ -616,81 +616,81 @@ const Arena = () => {
                                 key={meme.id}
                                 className="glass border-border/50 transition-all hover:border-primary/70 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:scale-[1.02] group"
                               >
-                                <CardContent className="p-3 space-y-2.5">
-                                  {/* Header: Category Label and Play Button */}
-                                  <div className="flex items-start justify-between">
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-primary/50 text-primary">
-                                      {battle.category}
-                                    </Badge>
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all cursor-pointer">
-                                      <Play className="w-4 h-4 text-white fill-white" />
-                                    </div>
-                                  </div>
+                                 <CardContent className="p-3 md:p-3 space-y-3 md:space-y-2.5">
+                                   {/* Header: Category Label and Play Button */}
+                                   <div className="flex items-start justify-between mb-1">
+                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-primary/50 text-primary">
+                                       {battle.category}
+                                     </Badge>
+                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all cursor-pointer">
+                                       <Play className="w-4 h-4 text-white fill-white" />
+                                     </div>
+                                   </div>
 
-                                  {/* Title and Username */}
-                                  <div className="space-y-0.5">
-                                    <h3 className="text-base font-bold line-clamp-1">{meme.title}</h3>
-                                    {meme.creatorUsername ? (
-                                      <p className="text-xs text-muted-foreground">
-                                        @{meme.creatorUsername}
-                                      </p>
-                                    ) : (
-                                      <p className="text-xs text-muted-foreground">
-                                        {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}
-                                      </p>
-                                    )}
-                                  </div>
+                                   {/* Title and Username */}
+                                   <div className="space-y-1 md:space-y-0.5">
+                                     <h3 className="text-base font-bold line-clamp-1">{meme.title}</h3>
+                                     {meme.creatorUsername ? (
+                                       <p className="text-xs text-muted-foreground">
+                                         @{meme.creatorUsername}
+                                       </p>
+                                     ) : (
+                                       <p className="text-xs text-muted-foreground">
+                                         {meme.creator.slice(0, 4)}...{meme.creator.slice(-4)}
+                                       </p>
+                                     )}
+                                   </div>
 
-                                  {/* Thin Progress Bar / Audio Player */}
-                                  {meme.audioUrl ? (
-                                    <div className="py-0.5">
-                                      <AudioPlayer audioUrl={meme.audioUrl} />
-                                    </div>
-                                  ) : (
-                                    <div className="h-0.5 bg-muted rounded-full w-full" />
-                                  )}
+                                   {/* Thin Progress Bar / Audio Player */}
+                                   {meme.audioUrl ? (
+                                     <div className="py-1 md:py-0.5">
+                                       <AudioPlayer audioUrl={meme.audioUrl} />
+                                     </div>
+                                   ) : (
+                                     <div className="h-0.5 bg-muted rounded-full w-full" />
+                                   )}
 
-                                  {/* Compact Action Row */}
-                                  <div className="flex gap-1.5 items-center pt-0.5">
-                                    <Button
-                                      variant={hasVoted ? "outline" : "default"}
-                                      size="sm"
-                                      className="flex-1 h-9 text-xs font-semibold bg-primary hover:bg-primary/90"
-                                      disabled={hasVoted}
-                                      onClick={() => handleVote(battle.id, meme.id)}
-                                    >
-                                      {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-9 w-9 p-0 hover:bg-primary/10"
-                                      onClick={() => handleShare(meme.id, meme.title)}
-                                    >
-                                      <Share2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                    {meme.audioUrl && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-9 w-9 p-0 hover:bg-primary/10"
-                                        onClick={() => handleRemix(meme.audioUrl, meme.title)}
-                                      >
-                                        <Music className="w-3.5 h-3.5" />
-                                      </Button>
-                                    )}
-                                  </div>
+                                   {/* Compact Action Row */}
+                                   <div className="flex gap-2 md:gap-1.5 items-center pt-1 md:pt-0.5">
+                                     <Button
+                                       variant={hasVoted ? "outline" : "default"}
+                                       size="sm"
+                                       className="flex-1 h-9 text-xs font-semibold bg-primary hover:bg-primary/90"
+                                       disabled={hasVoted}
+                                       onClick={() => handleVote(battle.id, meme.id)}
+                                     >
+                                       {hasVoted ? '✓ Voted' : 'Vote (+5 pts)'}
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       className="h-9 w-9 p-0 hover:bg-primary/10"
+                                       onClick={() => handleShare(meme.id, meme.title)}
+                                     >
+                                       <Share2 className="w-3.5 h-3.5" />
+                                     </Button>
+                                     {meme.audioUrl && (
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         className="h-9 w-9 p-0 hover:bg-primary/10"
+                                         onClick={() => handleRemix(meme.audioUrl, meme.title)}
+                                       >
+                                         <Music className="w-3.5 h-3.5" />
+                                       </Button>
+                                     )}
+                                   </div>
 
-                                  {/* Vote Count and Time Remaining */}
-                                  <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5">
-                                    <span>{meme.votes} votes</span>
-                                    {category && (
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {getTimeRemaining(category.expiresAt)}
-                                      </span>
-                                    )}
-                                  </div>
+                                   {/* Vote Count and Time Remaining */}
+                                   <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 md:pt-0.5">
+                                     <span>{meme.votes} votes</span>
+                                     {category && (
+                                       <span className="flex items-center gap-1">
+                                         <Clock className="w-3 h-3" />
+                                         {getTimeRemaining(category.expiresAt)}
+                                       </span>
+                                     )}
+                                   </div>
                                 </CardContent>
                               </Card>
                             ))}

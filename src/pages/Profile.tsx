@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Loader2, Copy, Trophy, User, ArrowLeft, ExternalLink, Check, Clock } from 'lucide-react';
+import { Loader2, Copy, Trophy, User, ArrowLeft, ExternalLink, Check, Clock, Flame, Target, Users } from 'lucide-react';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 
 interface Task {
@@ -24,6 +25,22 @@ interface UserTask {
   task_id: string;
   completed_at: string;
   verified: boolean;
+}
+
+interface DailyCheckIn {
+  check_in_date: string;
+  streak_count: number;
+}
+
+interface DailyQuest {
+  categories_created: number;
+  clips_uploaded: number;
+  votes_cast: number;
+}
+
+interface Referral {
+  username: string;
+  wallet_address: string;
 }
 
 interface ProfileData {
@@ -45,12 +62,19 @@ export default function Profile() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [referralCode, setReferralCode] = useState('');
+  const [streakCount, setStreakCount] = useState(0);
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [dailyQuest, setDailyQuest] = useState<DailyQuest>({ categories_created: 0, clips_uploaded: 0, votes_cast: 0 });
+  const [referrals, setReferrals] = useState<Referral[]>([]);
 
   useEffect(() => {
     fetchProfile();
     if (isOwnProfile) {
       fetchTasks();
       fetchUserTasks();
+      fetchStreakData();
+      fetchDailyQuest();
+      fetchReferrals();
     }
   }, [username, walletAddress]);
 
@@ -148,6 +172,138 @@ export default function Profile() {
 
   const isTaskCompleted = (taskId: string) => {
     return userTasks.some(ut => ut.task_id === taskId && ut.verified);
+  };
+
+  const fetchStreakData = async () => {
+    if (!walletAddress) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('daily_check_ins')
+        .select('*')
+        .eq('user_wallet', walletAddress)
+        .order('check_in_date', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const lastCheckIn = data[0];
+        const today = new Date().toISOString().split('T')[0];
+        const lastCheckInDate = lastCheckIn.check_in_date;
+
+        setStreakCount(lastCheckIn.streak_count);
+        setHasCheckedInToday(lastCheckInDate === today);
+      }
+    } catch (error) {
+      console.error('Error fetching streak data:', error);
+    }
+  };
+
+  const fetchDailyQuest = async () => {
+    if (!walletAddress) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('daily_quests')
+        .select('*')
+        .eq('user_wallet', walletAddress)
+        .eq('quest_date', today)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setDailyQuest({
+          categories_created: data.categories_created,
+          clips_uploaded: data.clips_uploaded,
+          votes_cast: data.votes_cast,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching daily quest:', error);
+    }
+  };
+
+  const fetchReferrals = async () => {
+    if (!walletAddress) return;
+
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('referred_users')
+        .eq('wallet_address', walletAddress)
+        .single();
+
+      if (error) throw error;
+
+      if (profileData?.referred_users && profileData.referred_users.length > 0) {
+        const { data: referredProfiles, error: refError } = await supabase
+          .from('profiles')
+          .select('username, wallet_address')
+          .in('wallet_address', profileData.referred_users);
+
+        if (refError) throw refError;
+        setReferrals(referredProfiles || []);
+      }
+    } catch (error) {
+      console.error('Error fetching referrals:', error);
+    }
+  };
+
+  const handleCheckIn = async () => {
+    if (!walletAddress || hasCheckedInToday) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: lastCheckIn } = await supabase
+        .from('daily_check_ins')
+        .select('*')
+        .eq('user_wallet', walletAddress)
+        .order('check_in_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      let newStreak = 1;
+      if (lastCheckIn) {
+        const lastDate = new Date(lastCheckIn.check_in_date);
+        const todayDate = new Date(today);
+        const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          newStreak = lastCheckIn.streak_count + 1;
+        }
+      }
+
+      const { error } = await supabase
+        .from('daily_check_ins')
+        .insert({
+          user_wallet: walletAddress,
+          check_in_date: today,
+          streak_count: newStreak,
+        });
+
+      if (error) throw error;
+
+      if (newStreak === 7) {
+        await supabase.rpc('add_user_points', {
+          wallet: walletAddress,
+          points_to_add: 100,
+        });
+
+        toast.success("🎉 7-Day Streak Complete! You earned 100 bonus points!");
+      } else {
+        toast.success(`Check-in complete! Current streak: ${newStreak} days`);
+      }
+
+      setStreakCount(newStreak);
+      setHasCheckedInToday(true);
+    } catch (error) {
+      console.error('Error checking in:', error);
+      toast.error("Failed to check in");
+    }
   };
 
   const handleCompleteTask = async (task: Task) => {
@@ -316,6 +472,132 @@ export default function Profile() {
           {isOwnProfile && (
             <TabsContent value="tasks">
               <div className="max-w-4xl mx-auto space-y-6">
+                {/* Daily Streak Check-in */}
+                <Card className="glass-strong p-6 border-primary/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Flame className="w-6 h-6 text-primary" />
+                    <h3 className="text-xl font-bold">Daily Streak</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    Check in daily to maintain your streak. Reach 7 days for 100 bonus points!
+                  </p>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">Progress to 7 days</span>
+                      <span className="text-sm font-bold text-primary">{streakCount}/7 days</span>
+                    </div>
+                    <Progress value={(streakCount / 7) * 100} className="h-3" />
+                  </div>
+                  <Button 
+                    onClick={handleCheckIn}
+                    disabled={hasCheckedInToday}
+                    className="w-full gap-2"
+                  >
+                    {hasCheckedInToday ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Checked in today
+                      </>
+                    ) : (
+                      <>
+                        <Flame className="w-4 h-4" />
+                        Check in now
+                      </>
+                    )}
+                  </Button>
+                </Card>
+
+                {/* Daily Quests */}
+                <Card className="glass-strong p-6 border-primary/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Target className="w-6 h-6 text-primary" />
+                    <h3 className="text-xl font-bold">Daily Quests</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-6">
+                    Complete daily activities to earn points. Resets at midnight.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="p-4 bg-background/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Create a Category</span>
+                        <span className="text-primary font-bold">
+                          {dailyQuest.categories_created >= 1 ? (
+                            <span className="flex items-center gap-1">
+                              <Check className="w-4 h-4" />
+                              +10 points
+                            </span>
+                          ) : (
+                            '+10 points'
+                          )}
+                        </span>
+                      </div>
+                      <Progress value={dailyQuest.categories_created >= 1 ? 100 : 0} className="h-2" />
+                    </div>
+
+                    <div className="p-4 bg-background/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Upload 5 Audio Clips</span>
+                        <span className="text-primary font-bold">
+                          {dailyQuest.clips_uploaded >= 5 ? (
+                            <span className="flex items-center gap-1">
+                              <Check className="w-4 h-4" />
+                              +10 points
+                            </span>
+                          ) : (
+                            '+10 points'
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mb-1">
+                        <Progress value={(dailyQuest.clips_uploaded / 5) * 100} className="h-2 flex-1 mr-2" />
+                        <span className="text-xs text-muted-foreground">{dailyQuest.clips_uploaded}/5</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-background/50 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Vote on 20 Audio Clips</span>
+                        <span className="text-primary font-bold">
+                          {dailyQuest.votes_cast >= 20 ? (
+                            <span className="flex items-center gap-1">
+                              <Check className="w-4 h-4" />
+                              +10 points
+                            </span>
+                          ) : (
+                            '+10 points'
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mb-1">
+                        <Progress value={(dailyQuest.votes_cast / 20) * 100} className="h-2 flex-1 mr-2" />
+                        <span className="text-xs text-muted-foreground">{dailyQuest.votes_cast}/20</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Referral Stats */}
+                <Card className="glass-strong p-6 border-primary/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Users className="w-6 h-6 text-primary" />
+                    <h3 className="text-xl font-bold">Your Referrals</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    {referrals.length} {referrals.length === 1 ? 'person has' : 'people have'} used your referral code
+                  </p>
+                  {referrals.length > 0 && (
+                    <div className="space-y-2">
+                      {referrals.map((referral, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-3 bg-background/50 rounded-lg">
+                          <Check className="w-4 h-4 text-primary" />
+                          <span className="font-medium">{referral.username}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
                 <Card className="glass-strong p-6 border-primary/20">
                   <h3 className="text-xl font-bold mb-4">Redeem Referral Code</h3>
                   <p className="text-muted-foreground mb-4">
@@ -365,7 +647,6 @@ export default function Profile() {
                             return;
                           }
 
-                          // Update user profile with referred_by (no points yet - must create category first)
                           const { error: updateError } = await supabase
                             .from('profiles')
                             .update({ referred_by: referrerData.wallet_address })

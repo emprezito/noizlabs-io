@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Radio } from 'lucide-react';
+import { Wallet, Sparkles, Home, Trophy, Rocket, ShoppingBag, ArrowLeftRight, Coins, ListChecks, Radio, User } from 'lucide-react';
 import { useArena } from '@/contexts/ArenaContext';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -80,11 +80,12 @@ export const Navbar = () => {
               {isConnected && (
                 <Badge 
                   variant="outline" 
-                  className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs"
+                  className="border-primary text-primary px-2 py-1 cursor-pointer hover:bg-primary/10 transition-colors text-xs flex items-center gap-1"
                   onClick={handlePointsClick}
                 >
-                  <Sparkles className="w-3 h-3 mr-1" />
+                  <Sparkles className="w-3 h-3" />
                   {userPoints}
+                  <User className="w-3 h-3" />
                 </Badge>
               )}
             </div>
@@ -132,11 +133,12 @@ export const Navbar = () => {
             {isConnected && (
               <Badge 
                 variant="outline" 
-                className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors"
+                className="border-primary text-primary px-3 py-1.5 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2"
                 onClick={handlePointsClick}
               >
-                <Sparkles className="w-3 h-3 mr-1" />
+                <Sparkles className="w-3 h-3" />
                 {userPoints} Points
+                <User className="w-4 h-4" />
               </Badge>
             )}
             <Button variant="neon" size="sm" onClick={handleWalletClick}>
