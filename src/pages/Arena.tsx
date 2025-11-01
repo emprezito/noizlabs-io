@@ -163,6 +163,9 @@ const Arena = () => {
       // Award points
       await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 10 });
 
+      // Update daily quest progress
+      await updateDailyQuest('clips_uploaded');
+
       toast.success('Audio uploaded! You earned 10 points! 🎉');
       setSelectedFile(null);
       setAudioTitle('');
@@ -215,12 +218,73 @@ const Arena = () => {
       // Award points
       await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
 
+      // Update daily quest progress
+      await updateDailyQuest('votes_cast');
+
       setVotedBattles(prev => new Set(prev).add(battleId));
       toast.success('Vote recorded! You earned 5 points!');
       refreshData();
     } catch (error: any) {
       console.error('Error voting:', error);
       toast.error('Failed to record vote');
+    }
+  };
+
+  const updateDailyQuest = async (questType: 'categories_created' | 'clips_uploaded' | 'votes_cast') => {
+    if (!walletAddress) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get or create today's quest
+      const { data: existingQuest } = await supabase
+        .from('daily_quests')
+        .select('*')
+        .eq('user_wallet', walletAddress)
+        .eq('quest_date', today)
+        .single();
+
+      let newValue = 1;
+      let questCompleted = false;
+      let questGoal = 0;
+
+      if (existingQuest) {
+        newValue = existingQuest[questType] + 1;
+      }
+
+      // Determine quest goal and check completion
+      if (questType === 'categories_created') {
+        questGoal = 1;
+        questCompleted = !existingQuest && newValue >= questGoal;
+      } else if (questType === 'clips_uploaded') {
+        questGoal = 5;
+        questCompleted = existingQuest && existingQuest[questType] < questGoal && newValue >= questGoal;
+      } else if (questType === 'votes_cast') {
+        questGoal = 20;
+        questCompleted = existingQuest && existingQuest[questType] < questGoal && newValue >= questGoal;
+      }
+
+      // Upsert quest progress
+      await supabase
+        .from('daily_quests')
+        .upsert({
+          user_wallet: walletAddress,
+          quest_date: today,
+          [questType]: newValue,
+        }, {
+          onConflict: 'user_wallet,quest_date'
+        });
+
+      // Award 10 points if quest just completed
+      if (questCompleted) {
+        await supabase.rpc('add_user_points', {
+          wallet: walletAddress,
+          points_to_add: 10,
+        });
+        toast.success('Daily quest completed! +10 bonus points! 🎯');
+      }
+    } catch (error) {
+      console.error('Error updating daily quest:', error);
     }
   };
 

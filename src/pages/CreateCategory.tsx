@@ -21,6 +21,45 @@ const CreateCategory = () => {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const updateDailyQuest = async (wallet: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get or create today's quest
+      const { data: existingQuest } = await supabase
+        .from('daily_quests')
+        .select('*')
+        .eq('user_wallet', wallet)
+        .eq('quest_date', today)
+        .single();
+
+      const newValue = existingQuest ? existingQuest.categories_created + 1 : 1;
+      const questCompleted = newValue === 1 && !existingQuest;
+
+      // Upsert quest progress
+      await supabase
+        .from('daily_quests')
+        .upsert({
+          user_wallet: wallet,
+          quest_date: today,
+          categories_created: newValue,
+        }, {
+          onConflict: 'user_wallet,quest_date'
+        });
+
+      // Award 10 points if quest just completed
+      if (questCompleted) {
+        await supabase.rpc('add_user_points', {
+          wallet: wallet,
+          points_to_add: 10,
+        });
+        toast.success('Daily quest completed! +10 bonus points! 🎯');
+      }
+    } catch (error) {
+      console.error('Error updating daily quest:', error);
+    }
+  };
+
   const handleCreateCategory = async () => {
     if (!isConnected || !walletAddress) {
       toast.error('Please connect your wallet first');
@@ -72,6 +111,9 @@ const CreateCategory = () => {
 
       // Award 50 points
       await supabase.rpc('add_user_points', { wallet: walletAddress, points_to_add: 50 });
+
+      // Update daily quest progress
+      await updateDailyQuest(walletAddress);
 
       // Check if this is user's first category and they were referred
       const { data: userCategories } = await supabase

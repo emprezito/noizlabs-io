@@ -73,6 +73,63 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_check_ins: {
+        Row: {
+          check_in_date: string
+          created_at: string | null
+          id: string
+          streak_count: number
+          user_wallet: string
+        }
+        Insert: {
+          check_in_date?: string
+          created_at?: string | null
+          id?: string
+          streak_count?: number
+          user_wallet: string
+        }
+        Update: {
+          check_in_date?: string
+          created_at?: string | null
+          id?: string
+          streak_count?: number
+          user_wallet?: string
+        }
+        Relationships: []
+      }
+      daily_quests: {
+        Row: {
+          categories_created: number
+          clips_uploaded: number
+          created_at: string | null
+          id: string
+          quest_date: string
+          updated_at: string | null
+          user_wallet: string
+          votes_cast: number
+        }
+        Insert: {
+          categories_created?: number
+          clips_uploaded?: number
+          created_at?: string | null
+          id?: string
+          quest_date?: string
+          updated_at?: string | null
+          user_wallet: string
+          votes_cast?: number
+        }
+        Update: {
+          categories_created?: number
+          clips_uploaded?: number
+          created_at?: string | null
+          id?: string
+          quest_date?: string
+          updated_at?: string | null
+          user_wallet?: string
+          votes_cast?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
