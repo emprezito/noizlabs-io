@@ -17,11 +17,13 @@ const Admin = () => {
   const { setVisible } = useWalletModal();
   const [formData, setFormData] = useState({
     audioFile: null as File | null,
+    imageFile: null as File | null,
     tokenName: '',
     symbol: '',
     supply: '',
   });
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isMinting, setIsMinting] = useState(false);
   const [mintedTokens, setMintedTokens] = useState<any[]>([]);
 
@@ -31,6 +33,15 @@ const Admin = () => {
       setFormData({ ...formData, audioFile: file });
       setAudioUrl(URL.createObjectURL(file));
       toast.success('Audio file uploaded!');
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, imageFile: file });
+      setImagePreview(URL.createObjectURL(file));
+      toast.success('Image uploaded!');
     }
   };
 
@@ -60,6 +71,22 @@ const Admin = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('audio-clips')
         .getPublicUrl(fileName);
+
+      // Upload image if provided
+      let imageUrl = null;
+      if (formData.imageFile) {
+        const imageFileName = `${Date.now()}-${formData.imageFile.name}`;
+        const { error: imageUploadError } = await supabase.storage
+          .from('audio-clips')
+          .upload(imageFileName, formData.imageFile);
+
+        if (!imageUploadError) {
+          const { data: { publicUrl: imagePublicUrl } } = supabase.storage
+            .from('audio-clips')
+            .getPublicUrl(imageFileName);
+          imageUrl = imagePublicUrl;
+        }
+      }
 
       // 2. Create metadata (stored locally, no need to upload)
       const metadata = {
@@ -122,6 +149,7 @@ const Admin = () => {
         symbol: formData.symbol,
         supply: formData.supply,
         audioUrl: publicUrl,
+        imageUrl,
         metadata,
         mintAddress: mint.toBase58(),
         timestamp: new Date().toISOString(),
@@ -136,11 +164,13 @@ const Admin = () => {
       // Reset form
       setFormData({
         audioFile: null,
+        imageFile: null,
         tokenName: '',
         symbol: '',
         supply: '',
       });
       setAudioUrl(null);
+      setImagePreview(null);
     } catch (error: any) {
       console.error('Minting error:', error);
       toast.error(`Failed to mint token: ${error.message}`);
@@ -170,6 +200,34 @@ const Admin = () => {
               <CardDescription>Free minting for testing on Devnet</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="image">Token Image *</Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image"
+                  />
+                  <label htmlFor="image" className="cursor-pointer">
+                    <p className="text-sm font-medium">
+                      {formData.imageFile ? formData.imageFile.name : 'Upload token image'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG, WEBP (max 5MB)
+                    </p>
+                  </label>
+                </div>
+                {imagePreview && (
+                  <div className="mt-4">
+                    <img src={imagePreview} alt="Token preview" className="w-full rounded-lg" />
+                  </div>
+                )}
+              </div>
+
               {/* Audio Upload */}
               <div className="space-y-2">
                 <Label htmlFor="audio">Audio Clip *</Label>
@@ -177,7 +235,7 @@ const Admin = () => {
                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <Input
                     type="file"
-                    accept="audio/*"
+                    accept="audio/*,.aac"
                     onChange={handleFileUpload}
                     className="hidden"
                     id="audio"
@@ -187,7 +245,7 @@ const Admin = () => {
                       {formData.audioFile ? formData.audioFile.name : 'Upload audio clip'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      MP3, WAV, OGG (max 10MB)
+                      MP3, WAV, OGG, AAC (max 10MB)
                     </p>
                   </label>
                 </div>
@@ -275,6 +333,10 @@ const Admin = () => {
                   {mintedTokens.map((token, index) => (
                     <Card key={index} className="glass border-border">
                       <CardContent className="pt-6 space-y-3">
+                        {token.imageUrl && (
+                          <img src={token.imageUrl} alt={token.name} className="w-full rounded-lg mb-3" />
+                        )}
+                        
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-bold">{token.name}</h3>

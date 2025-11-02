@@ -10,11 +10,14 @@ import { toast } from 'sonner';
 const Launchpad = () => {
   const [formData, setFormData] = useState({
     audioFile: null as File | null,
+    imageFile: null as File | null,
     tokenName: '',
     symbol: '',
     supply: '',
     liquidity: '',
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [audioPreview, setAudioPreview] = useState<string | null>(null);
 
   const [previewToken, setPreviewToken] = useState<any>(null);
   const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
@@ -23,7 +26,17 @@ const Launchpad = () => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData({ ...formData, audioFile: file });
+      setAudioPreview(URL.createObjectURL(file));
       toast.success('Audio file uploaded!');
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, imageFile: file });
+      setImagePreview(URL.createObjectURL(file));
+      toast.success('Image uploaded!');
     }
   };
 
@@ -68,6 +81,34 @@ const Launchpad = () => {
               <CardDescription>Fill in the details to launch your audio token</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="image">Token Image *</Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image"
+                  />
+                  <label htmlFor="image" className="cursor-pointer">
+                    <p className="text-sm font-medium">
+                      {formData.imageFile ? formData.imageFile.name : 'Upload token image'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG, WEBP (max 5MB)
+                    </p>
+                  </label>
+                </div>
+                {imagePreview && (
+                  <div className="mt-4">
+                    <img src={imagePreview} alt="Token preview" className="w-full rounded-lg" />
+                  </div>
+                )}
+              </div>
+
               {/* Audio Upload */}
               <div className="space-y-2">
                 <Label htmlFor="audio">Audio Clip *</Label>
@@ -75,7 +116,7 @@ const Launchpad = () => {
                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <Input
                     type="file"
-                    accept="audio/*"
+                    accept="audio/*,.aac"
                     onChange={handleFileUpload}
                     className="hidden"
                     id="audio"
@@ -85,10 +126,17 @@ const Launchpad = () => {
                       {formData.audioFile ? formData.audioFile.name : 'Upload audio clip'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      MP3, WAV, OGG (max 30s)
+                      MP3, WAV, OGG, AAC (max 30s)
                     </p>
                   </label>
                 </div>
+                {audioPreview && (
+                  <div className="mt-4 glass rounded-lg p-4">
+                    <audio controls className="w-full">
+                      <source src={audioPreview} />
+                    </audio>
+                  </div>
+                )}
               </div>
 
               {/* Token Name */}
@@ -166,15 +214,27 @@ const Launchpad = () => {
               <CardContent>
                 {previewToken ? (
                   <div className="space-y-6">
-                    <div className="aspect-square rounded-xl glass-strong flex items-center justify-center p-8">
-                      <div className="text-center">
-                        <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
-                          <Sparkles className="w-12 h-12" />
+                    <div className="aspect-square rounded-xl glass-strong flex items-center justify-center overflow-hidden">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt={previewToken.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center p-8">
+                          <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
+                            <Sparkles className="w-12 h-12" />
+                          </div>
+                          <h3 className="text-2xl font-bold mb-2">{previewToken.name}</h3>
+                          <p className="text-lg text-primary font-semibold">{previewToken.symbol}</p>
                         </div>
-                        <h3 className="text-2xl font-bold mb-2">{previewToken.name}</h3>
-                        <p className="text-lg text-primary font-semibold">{previewToken.symbol}</p>
-                      </div>
+                      )}
                     </div>
+
+                    {audioPreview && (
+                      <div className="glass rounded-lg p-4">
+                        <audio controls className="w-full">
+                          <source src={audioPreview} />
+                        </audio>
+                      </div>
+                    )}
 
                     <div className="glass rounded-lg p-4 space-y-3">
                       <div className="flex justify-between">
