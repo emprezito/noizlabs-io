@@ -80,26 +80,36 @@ const Marketplace = () => {
                 className="glass-strong border border-border/50 hover:border-primary/50 transition-all duration-300"
               >
                 <CardContent className="p-6 space-y-6">
-                  {/* Megaphone Icon */}
+                  {/* Clip Image or Megaphone Icon */}
                   <div className="flex justify-center">
-                    <div className={`relative w-32 h-32 bg-gradient-to-br ${megaphoneColors[index]} rounded-2xl flex items-center justify-center shadow-lg`}>
-                      <Volume2 className="w-16 h-16 text-white" />
-                      <div className="absolute -right-2 -top-2">
-                        <div className="relative">
-                          {[...Array(3)].map((_, i) => (
-                            <div 
-                              key={i}
-                              className={`absolute w-4 h-1 bg-gradient-to-r ${megaphoneColors[index]} rounded-full`}
-                              style={{
-                                right: `${i * 8}px`,
-                                top: `${i * 6}px`,
-                                transform: 'rotate(-45deg)',
-                              }}
-                            />
-                          ))}
+                    {clip.imageUrl ? (
+                      <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-lg">
+                        <img 
+                          src={clip.imageUrl} 
+                          alt={clip.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className={`relative w-32 h-32 bg-gradient-to-br ${megaphoneColors[index]} rounded-2xl flex items-center justify-center shadow-lg`}>
+                        <Volume2 className="w-16 h-16 text-white" />
+                        <div className="absolute -right-2 -top-2">
+                          <div className="relative">
+                            {[...Array(3)].map((_, i) => (
+                              <div 
+                                key={i}
+                                className={`absolute w-4 h-1 bg-gradient-to-r ${megaphoneColors[index]} rounded-full`}
+                                style={{
+                                  right: `${i * 8}px`,
+                                  top: `${i * 6}px`,
+                                  transform: 'rotate(-45deg)',
+                                }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Title & Token */}

@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           creator_wallet: string
           id: string
+          image_url: string | null
           title: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           creator_wallet: string
           id?: string
+          image_url?: string | null
           title: string
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           creator_wallet?: string
           id?: string
+          image_url?: string | null
           title?: string
         }
         Relationships: [
