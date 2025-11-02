@@ -30,6 +30,13 @@ const isInPhantomBrowser = () => {
   return window.phantom?.solana?.isPhantom;
 };
 
+// Helper to redirect to Phantom browser
+const redirectToPhantom = () => {
+  const currentUrl = window.location.href;
+  const phantomDeepLink = `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}?ref=https://phantom.app`;
+  window.location.href = phantomDeepLink;
+};
+
 interface Props {
   children: ReactNode;
 }
@@ -47,33 +54,27 @@ export const SolanaWalletProvider: FC<Props> = ({ children }) => {
     []
   );
 
-  // Handle Phantom mobile deep linking
+  // Show redirect banner on mobile if not in Phantom
   useEffect(() => {
     if (isMobileDevice() && !isInPhantomBrowser()) {
-      // Detect if user clicks wallet connect button
+      // Intercept wallet connection attempts
       const handleWalletClick = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
         // Check if clicked element or parent is a wallet button
         const walletButton = target.closest('button[class*="wallet"]') || 
-                           target.closest('button[class*="connect"]');
+                           target.closest('button[class*="connect"]') ||
+                           target.closest('button[class*="Connect"]');
         
         if (walletButton) {
-          // Small delay to let the wallet modal potentially open
-          setTimeout(() => {
-            // Check if Phantom option might be selected
-            const phantomOption = document.querySelector('[class*="phantom"]');
-            if (phantomOption) {
-              // Redirect to Phantom browser
-              const currentUrl = window.location.href;
-              const phantomDeepLink = `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}`;
-              window.location.href = phantomDeepLink;
-            }
-          }, 100);
+          e.preventDefault();
+          e.stopPropagation();
+          // Immediately redirect to Phantom browser
+          redirectToPhantom();
         }
       };
 
-      document.addEventListener('click', handleWalletClick);
-      return () => document.removeEventListener('click', handleWalletClick);
+      document.addEventListener('click', handleWalletClick, true);
+      return () => document.removeEventListener('click', handleWalletClick, true);
     }
   }, []);
 
