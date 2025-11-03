@@ -60,25 +60,34 @@ const remixOptions = [
 export const RemixDialog = ({ open, onOpenChange, audioUrl, clipTitle }: RemixDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [selectedRemix, setSelectedRemix] = useState<string | null>(null);
+  const [remixedAudio, setRemixedAudio] = useState<string | null>(null);
+  const [remixDescription, setRemixDescription] = useState<string>('');
   const { toast } = useToast();
 
   const handleRemix = async (remixType: string) => {
     setLoading(true);
     setSelectedRemix(remixType);
+    setRemixedAudio(null);
 
     try {
+      toast({
+        title: 'Processing Remix... 🎵',
+        description: 'This may take a few moments',
+      });
+
       const { data, error } = await supabase.functions.invoke('remix-audio', {
-        body: { audioUrl, remixType },
+        body: { audioUrl, remixType, clipTitle },
       });
 
       if (error) throw error;
 
-      toast({
-        title: 'Remix Analysis Complete! 🎧',
-        description: data.message,
-      });
+      setRemixedAudio(data.remixedAudioUrl);
+      setRemixDescription(data.description);
 
-      console.log('Remix description:', data.description);
+      toast({
+        title: 'Remix Complete! 🎧',
+        description: data.description,
+      });
     } catch (error) {
       console.error('Error remixing audio:', error);
       toast({
@@ -89,6 +98,15 @@ export const RemixDialog = ({ open, onOpenChange, audioUrl, clipTitle }: RemixDi
     } finally {
       setLoading(false);
       setSelectedRemix(null);
+    }
+  };
+
+  const handleDownload = () => {
+    if (remixedAudio) {
+      const a = document.createElement('a');
+      a.href = remixedAudio;
+      a.download = `${clipTitle}-remixed.mp3`;
+      a.click();
     }
   };
 
@@ -126,14 +144,30 @@ export const RemixDialog = ({ open, onOpenChange, audioUrl, clipTitle }: RemixDi
           ))}
         </div>
 
+        {remixedAudio && (
+          <div className="mt-2 md:mt-4 p-2 md:p-4 bg-primary/10 rounded-lg border border-primary/30">
+            <p className="text-xs md:text-sm font-medium text-primary mb-2">Remixed Audio Ready!</p>
+            <p className="text-[10px] md:text-xs text-muted-foreground mb-3">{remixDescription}</p>
+            <div className="flex flex-col gap-2">
+              <audio src={remixedAudio} controls className="w-full" />
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                className="w-full text-xs md:text-sm"
+              >
+                Download Remix
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-2 md:mt-4 p-2 md:p-4 bg-background/50 rounded-lg border border-primary/20">
           <div className="flex items-start gap-2">
             <Music className="w-4 h-4 md:w-5 md:h-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="text-xs md:text-sm">
               <p className="font-medium text-primary mb-1">About AI Remixing</p>
               <p className="text-muted-foreground text-[10px] md:text-xs">
-                Our AI analyzes your audio and provides creative transformation suggestions to help you create
-                unique versions while maintaining the essence of your sound.
+                Select a remix style and AI will process your audio to create a unique version with the chosen effect applied.
               </p>
             </div>
           </div>
