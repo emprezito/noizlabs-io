@@ -1,40 +1,46 @@
-# Welcome to your Lovable project
+# NoizLabs - Audio Tokenization Platform 🎵🔗
 
-## Project info
+NoizLabs is a cutting-edge platform that enables creators to tokenize audio clips as NFTs on the Solana blockchain. Built for musicians, podcasters, and audio creators to monetize their work through decentralized ownership and trading.
 
-**URL**: https://lovable.dev/projects/bec881d0-e62c-4042-876f-2c796cd730c4
+## 🚀 Features
 
-## How can I edit this code?
+- **Audio Tokenization**: Convert audio clips into tradable NFTs
+- **Solana Integration**: Fast, low-cost transactions on Solana
+- **Raydium DEX**: Built-in liquidity pool creation and trading
+- **Web3 Wallet Support**: Connect with Phantom, Solflare, and other wallets
+- **Modern UI**: Built with Next.js, TypeScript, and Tailwind CSS
 
-There are several ways of editing your application.
+## 🛠 Tech Stack
 
-**Use Lovable**
+- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Blockchain**: Solana, Raydium SDK
+- **Web3**: @solana/wallet-adapter, @solana/web3.js
+- **UI**: shadcn/ui, Framer Motion
+- **Deployment**: Vercel (via Lovable)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bec881d0-e62c-4042-876f-2c796cd730c4) and start prompting.
+## 🏁 Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- A Solana wallet (Phantom, Solflare, etc.)
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Clone the repository
+git clone <your-repo-url>
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# Navigate to project directory
+cd noizlabs
 
-Follow these steps:
+# Install dependencies
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
+open http://localhost:3000 to view your application
 
 **Edit a file directly in GitHub**
 
@@ -50,24 +56,58 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## How it works ##
 
-This project is built with:
+- **Upload Audio:** Drag and drop audio file or record directly
+- **Create Token:** Mint Unique SPL Tokens for each audio clip
+- **Add Liquidity:** Create Trading pools on Raydium
+- **Trade & Earn:** Buy, sell and earn from Tokenized audio clips
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Development ##
 
-## How can I deploy this project?
+**Available Script**
 
-Simply open [Lovable](https://lovable.dev/projects/bec881d0-e62c-4042-876f-2c796cd730c4) and click on Share -> Publish.
+```bash
+npm run dev          # Start development server
 
-## Can I connect a custom domain to my Lovable project?
+npm run build        # Build for production
 
-Yes, you can!
+npm run start        # Start production server
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+npm run lint         # Run ESLint
+```
+**Environment Variable** 
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+create a .env.local file:
+
+```bash
+NEXT_PUBLIC_SOLANA_RPC_URL=your_rpc_endpoint
+NEXT_PUBLIC_SOLANA_NETWORK=devnet/mainnet
+```
+
+## Deployment ##
+
+This project is deployed via vercel. To deploy:
+1. Push your changes to the main branch 
+2. Connect your Github repository to vercel
+3. Vercel will automatically deploy on each push to main
+
+**Manual Deployment**
+
+```bash
+
+# Build the project
+npm run build
+
+# Deploy to Vercel
+npx vercel --prod
+
+```
+
+## 🔗 Links ##
+**Live Demo:** [Noizlabs live Demo](https://youtu.be/a0IfbN4J5oQ?si=LweJ24HAQUmxYcI1)
+**Website:** [Noizlabs.vercel.app](noizlabs.vercel.app)
+**X (Formerly Twitter):** [x.com/noizlabs_io]
+
+
+Built with ❤️ by the NoizLabs team
