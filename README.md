@@ -1,10 +1,10 @@
 # NoizLabs - Audio Tokenization Platform 🎵🔗
 
-NoizLabs is a cutting-edge platform that enables creators to tokenize audio clips as NFTs on the Solana blockchain. Built for musicians, podcasters, and audio creators to monetize their work through decentralized ownership and trading.
+NoizLabs is a cutting-edge platform that enables creators to turn audio clips & sound Memes into Tradable tokens on the Solana blockchain. Built for degen traders, meme enthusiasts, musicians, podcasters, and audio creators to monetize their work through decentralized ownership and trading.
 
 ## 🚀 Features
 
-- **Audio Tokenization**: Convert audio clips into tradable NFTs
+- **Audio Tokenization**: Convert audio clips & Sound Memes into tradable Tokens
 - **Solana Integration**: Fast, low-cost transactions on Solana
 - **Raydium DEX**: Built-in liquidity pool creation and trading
 - **Web3 Wallet Support**: Connect with Phantom, Solflare, and other wallets
@@ -105,9 +105,9 @@ npx vercel --prod
 ```
 
 ## 🔗 Links ##
-**Live Demo:** [Noizlabs live Demo](https://youtu.be/a0IfbN4J5oQ?si=LweJ24HAQUmxYcI1)
-**Website:** [Noizlabs.vercel.app](noizlabs.vercel.app)
-**X (Formerly Twitter):** [x.com/noizlabs_io]
+-**Live Demo:** [Noizlabs live Demo](https://youtu.be/a0IfbN4J5oQ?si=LweJ24HAQUmxYcI1)
+-**Website:** [Noizlabs.vercel.app](noizlabs.vercel.app)
+-**X (Formerly Twitter):** [x.com/noizlabs_io]
 
 
 Built with ❤️ by the NoizLabs team
