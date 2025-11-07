@@ -107,7 +107,7 @@ npx vercel --prod
 ## 🔗 Links ##
 -**Live Demo:** [Noizlabs live Demo](https://youtu.be/a0IfbN4J5oQ?si=LweJ24HAQUmxYcI1)
 -**Website:** [Noizlabs.vercel.app](noizlabs.vercel.app)
--**X (Formerly Twitter):** [x.com/noizlabs_io]
+-**X (Formerly Twitter):** [noizlabs_io] (x.com/noizlabs_io)
 
 
 Built with ❤️ by the NoizLabs team
