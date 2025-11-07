@@ -8,8 +8,9 @@ import { toast } from 'sonner';
 import { useSolanaWallet } from '@/hooks/useSolanaWallet';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { supabase } from '@/integrations/supabase/client';
+import { TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount,mintTo } from '@solana/spl-token';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import * as token from '@solana/spl-token';
 import { AudioPlayer } from '@/components/AudioPlayer';
 
 const Admin = () => {
@@ -114,7 +115,7 @@ const Admin = () => {
       await connection.confirmTransaction(airdropSignature);
 
       // Create the mint
-      const mint = await createMint(
+      const mint = await token.createMint(
         connection,
         mintAuthority,
         mintAuthority.publicKey,
@@ -126,7 +127,7 @@ const Admin = () => {
       );
 
       // Get or create token account for user
-      const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      const tokenAccount = await token.getOrCreateAssociatedTokenAccount(
         connection,
         mintAuthority,
         mint,
@@ -135,7 +136,7 @@ const Admin = () => {
 
       // Mint tokens to user's account
       const supplyAmount = BigInt(parseFloat(formData.supply) * 1e9);
-      await mintTo(
+      await token.mintTo(
         connection,
         mintAuthority,
         mint,

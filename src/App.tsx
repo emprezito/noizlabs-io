@@ -14,7 +14,7 @@ import Landing from "./pages/Landing";
 import Arena from "./pages/Arena";
 import CreateCategory from "./pages/CreateCategory";
 import Launchpad from "./pages/Launchpad";
-import Admin from "./pages/Admin";
+{/*import Admin from "./pages/Admin";*/}
 import Marketplace from "./pages/Marketplace";
 import Swap from "./pages/Swap";
 import Staking from "./pages/Staking";
@@ -60,7 +60,7 @@ const AppContent = () => {
         <Route path="/arena" element={<Arena />} />
         <Route path="/create-category" element={<CreateCategory />} />
         <Route path="/launchpad" element={<Launchpad />} />
-        <Route path="/admin" element={<Admin />} />
+        {/*<Route path="/admin" element={<Admin />} />*/}
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/swap" element={<Swap />} />
         <Route path="/staking" element={<Staking />} />
