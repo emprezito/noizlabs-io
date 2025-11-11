@@ -212,12 +212,12 @@ const Arena = () => {
       if (error) throw error;
 
       // Award points
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 10 });
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
 
       // Update daily quest progress
       await updateDailyQuest('clips_uploaded');
 
-      toast.success('Audio uploaded! You earned 10 points! 🎉');
+      toast.success('Audio uploaded! You earned 5 points! 🎉');
       setSelectedFile(null);
       setSelectedImageFile(null);
       setAudioTitle('');
@@ -268,13 +268,13 @@ const Arena = () => {
       }
 
       // Award points
-      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 5 });
+      await supabase.rpc('add_user_points', { wallet: walletAddress!, points_to_add: 1 });
 
       // Update daily quest progress
       await updateDailyQuest('votes_cast');
 
       setVotedBattles(prev => new Set(prev).add(battleId));
-      toast.success('Vote recorded! You earned 5 points!');
+      toast.success('Vote recorded! You earned 1 points!');
       refreshData();
     } catch (error: any) {
       console.error('Error voting:', error);
@@ -675,9 +675,9 @@ const Arena = () => {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>• Connect your Solana wallet</p>
                     <p>• Upload audio clips for free</p>
-                    <p>• Earn 10 points per upload</p>
+                    <p>• Earn 5 points per upload</p>
                     <p>• Unlimited entries per category</p>
-                    <p>• Vote to earn 5 points</p>
+                    <p>• Vote to earn 1 points</p>
                     <p>• Share clips to get votes</p>
                     <p>• Top clip wins 25 points after 7 days</p>
                   </div>
