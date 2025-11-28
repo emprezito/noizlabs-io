@@ -42,7 +42,7 @@ const Landing = () => {
             <Link to="/arena">
               <Button variant="hero" size="xl">
                 <Zap className="w-5 h-5" />
-                Enter Arena
+                Enter the NoizHub
               </Button>
             </Link>
             <Link to="/launchpad">
